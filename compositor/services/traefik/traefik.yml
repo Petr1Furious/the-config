@@ -1,0 +1,31 @@
+providers:
+  docker:
+    exposedByDefault: false
+  file:
+    filename: "/etc/traefik/rules.yml"
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: "default"
+        domains:
+        - main: petr1furious.me
+          sans:
+          - '*.petr1furious.me'
+
+certificatesResolvers:
+  default:
+    acme:
+      email: petrtsopa03@gmail.com
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare
