@@ -8,7 +8,6 @@
 {
   imports = [
     ./services/traefik
-    ./services/monitoring
     ./services/minecraft/hserver
     ./services/vaultwarden
     ./services/tgauth
