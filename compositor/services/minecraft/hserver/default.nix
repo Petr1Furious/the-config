@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   virtualisation.compositor.hserver = {
@@ -27,8 +32,14 @@
           "traefik.http.routers.hserver_imageframe.service=hserver_imageframe"
           "traefik.http.services.hserver_imageframe.loadbalancer.server.port=8517"
         ];
-        networks = [ "monitoring" "default" ];
-        ports = [ "25565:25565" "24454:24454/udp" ];
+        networks = [
+          "monitoring"
+          "default"
+        ];
+        ports = [
+          "25565:25565"
+          "24454:24454/udp"
+        ];
         restart = "unless-stopped";
         stdin_open = true;
         tty = true;
@@ -37,15 +48,18 @@
     };
   };
 
-  backup.backups.hserver = let docker = lib.getExe pkgs.docker;
-  in {
-    backupPrepareCommand = ''
-      ${docker} exec minigames rcon-cli save-all flush
-      ${docker} exec minigames rcon-cli save-off
-    '';
-    backupCleanupCommand = "${docker} exec minigames rcon-cli save-on";
-    schedule = "*:0/30";
-    randomizedDelay = "0";
-    paths = [ "/srv/minecraft/hserver" ];
-  };
+  backup.backups.hserver =
+    let
+      docker = lib.getExe pkgs.docker;
+    in
+    {
+      backupPrepareCommand = ''
+        ${docker} exec minigames rcon-cli save-all flush
+        ${docker} exec minigames rcon-cli save-off
+      '';
+      backupCleanupCommand = "${docker} exec minigames rcon-cli save-on";
+      schedule = "*:0/30";
+      randomizedDelay = "0";
+      paths = [ "/srv/minecraft/hserver" ];
+    };
 }

@@ -22,6 +22,9 @@ let
         locations."/" = {
           root = publicDir + "/launcher";
         };
+        locations."/launcher" = {
+          root = publicDir;
+        };
         locations."/data" = {
           root = publicDir;
           extraConfig = "autoindex on;";

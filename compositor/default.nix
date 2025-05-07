@@ -33,11 +33,9 @@
             description = "Docker Compose service for " + name;
             after = [
               "docker.service"
-              "docker-network-monitoring.service"
             ];
             requires = [
               "docker.service"
-              "docker-network-monitoring.service"
             ];
             wantedBy = [ "multi-user.target" ];
             path = [ pkgs.docker ];
@@ -56,24 +54,6 @@
       virtualisation.docker.enable = true;
       virtualisation.oci-containers.backend = "docker";
 
-      systemd.services = lib.mkMerge [
-        systemdUnits
-        {
-          docker-network-monitoring = {
-            description = "Create Docker network 'monitoring'";
-            wantedBy = [ "multi-user.target" ];
-            after = [ "docker.service" ];
-            requires = [ "docker.service" ];
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-            };
-            script = ''
-              ${lib.getExe pkgs.docker} network inspect monitoring >/dev/null 2>&1 || \
-              ${lib.getExe pkgs.docker} network create monitoring
-            '';
-          };
-        }
-      ];
+      systemd.services = systemdUnits;
     };
 }

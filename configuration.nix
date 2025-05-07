@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  pkgs-unstable,
   ...
 }:
 
@@ -18,6 +19,7 @@
     ./nginx.nix
     ./immich.nix
     ./minecraft-user.nix
+    ./sing-box.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -57,6 +59,10 @@
     nixfmt-rfc-style
     tealdeer
     peco
+    gcc
+    manix
+    pkgs-unstable.sing-box
+    pkgs-unstable.rustup
   ];
 
   programs.zsh = {

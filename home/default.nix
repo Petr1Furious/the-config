@@ -10,6 +10,11 @@
   programs.home-manager.enable = true;
   xdg.enable = true;
 
+  programs.direnv = {
+    enable = true;
+    silent = true;
+  };
+
   programs.zsh = {
     enable = true;
     dotDir = ".config/zsh";
