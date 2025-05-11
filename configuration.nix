@@ -63,6 +63,7 @@
     whois
     bmon
     restic
+    iotop
     pkgs-unstable.sing-box
     pkgs-unstable.rustup
   ];
