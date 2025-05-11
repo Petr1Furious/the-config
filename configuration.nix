@@ -11,15 +11,14 @@
     ./hardware-configuration.nix
     ./restic.nix
     ./compositor
-    ./minecraft.nix
     ./potato-launcher
     ./postgres.nix
     ./backup-home.nix
     ./jitsi.nix
     ./nginx.nix
     ./immich.nix
-    ./minecraft-user.nix
     ./sing-box.nix
+    ./minecraft
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -61,6 +60,9 @@
     peco
     gcc
     manix
+    whois
+    bmon
+    restic
     pkgs-unstable.sing-box
     pkgs-unstable.rustup
   ];
@@ -70,11 +72,12 @@
     enableGlobalCompInit = false;
   };
 
-  backup.enable = false;
+  backup.enable = true;
 
   services.openssh.enable = true;
 
   services.vscode-server.enable = true;
+  # services.vscode-server.installPath = "$HOME/.cursor-server";
 
   networking.firewall.allowedTCPPorts = [
     22

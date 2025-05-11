@@ -21,4 +21,10 @@ in
       target = "http://localhost:${toString config.services.immich.port}";
     }
   ];
+
+  backup.backups.immich = {
+    paths = [
+      "/srv/immich"
+    ];
+  };
 }

@@ -54,10 +54,10 @@
     in
     {
       backupPrepareCommand = ''
-        ${docker} exec minigames rcon-cli save-all flush
-        ${docker} exec minigames rcon-cli save-off
+        ${docker} exec hserver rcon-cli save-all flush
+        ${docker} exec hserver rcon-cli save-off
       '';
-      backupCleanupCommand = "${docker} exec minigames rcon-cli save-on";
+      backupCleanupCommand = "${docker} exec hserver rcon-cli save-on";
       schedule = "*:0/30";
       randomizedDelay = "0";
       paths = [ "/srv/minecraft/hserver" ];

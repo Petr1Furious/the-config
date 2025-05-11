@@ -8,12 +8,12 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    vscode-server = {
-      url = "github:nix-community/nixos-vscode-server";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    vscode-server = {
+      url = "github:nix-community/nixos-vscode-server";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -24,8 +24,8 @@
       nixpkgs,
       nixpkgs-unstable,
       agenix,
-      vscode-server,
       home-manager,
+      vscode-server,
     }:
     {
       nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem (rec {
@@ -33,7 +33,6 @@
         modules = [
           ./configuration.nix
           agenix.nixosModules.default
-          vscode-server.nixosModules.default
           {
             environment.systemPackages = [ agenix.packages.${system}.default ];
           }
@@ -43,6 +42,7 @@
             home-manager.useUserPackages = true;
             home-manager.users.petrtsopa = ./home;
           }
+          vscode-server.nixosModules.default
         ];
         specialArgs = {
           pkgs-unstable = import nixpkgs-unstable {

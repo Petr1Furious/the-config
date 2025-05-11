@@ -21,6 +21,9 @@ entryPoints:
         - main: petr1furious.me
           sans:
           - '*.petr1furious.me'
+        - main: hseminecraft.ru
+          sans:
+          - '*.hseminecraft.ru'
 
 certificatesResolvers:
   default:
