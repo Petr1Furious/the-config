@@ -61,5 +61,8 @@
       schedule = "*:0/30";
       randomizedDelay = "0";
       paths = [ "/srv/minecraft/hserver" ];
+      extraBackupArgs = [
+        "--exclude=/srv/minecraft/hserver/bluemap"
+      ];
     };
 }

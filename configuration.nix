@@ -67,6 +67,7 @@
     restic
     iotop
     pciutils
+    ncdu
     pkgs-unstable.sing-box
     pkgs-unstable.rustup
   ];
