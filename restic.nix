@@ -1,4 +1,11 @@
 { config, lib, ... }:
+let
+  repository = "rclone:yandex:/backups";
+  rcloneConfigFile = config.age.secrets.rclone-config.path;
+  passwordFile = config.age.secrets.restic-key.path;
+  prometheusExporterPort = 9753;
+  exporterUser = "restic-exporter";
+in
 {
   options = with lib; {
     backup = mkOption {
@@ -74,13 +81,14 @@
       default = { };
     };
   };
+
   config = {
     services.restic.backups = lib.mkIf config.backup.enable (
       lib.mapAttrs (name: cfg: {
         initialize = true;
-        repository = "rclone:yandex:/backups";
-        rcloneConfigFile = config.age.secrets.rclone-config.path;
-        passwordFile = config.age.secrets.restic-key.path;
+        inherit repository;
+        inherit rcloneConfigFile;
+        inherit passwordFile;
         extraBackupArgs =
           [
             "--tag=${cfg.tag}"
@@ -113,13 +121,46 @@
       }) config.backup.backups
     );
 
+    users.users.restic-exporter = {
+      isSystemUser = true;
+      createHome = false;
+      group = "restic-exporter";
+    };
+    users.groups."restic-exporter" = { };
+
     age.secrets = lib.mkIf config.backup.enable {
       restic-key = {
         file = ./secrets/restic-key.age;
+        mode = "440";
+        owner = "root";
+        group = exporterUser;
       };
       rclone-config = {
         file = ./secrets/rclone-config.age;
+        mode = "440";
+        owner = "root";
+        group = exporterUser;
       };
     };
+
+    services.prometheus.exporters.restic = {
+      enable = true;
+      inherit repository;
+      inherit rcloneConfigFile;
+      inherit passwordFile;
+      user = exporterUser;
+      port = prometheusExporterPort;
+    };
+
+    services.prometheus.scrapeConfigs = [
+      {
+        job_name = "restic";
+        static_configs = [
+          {
+            targets = [ "localhost:${toString prometheusExporterPort}" ];
+          }
+        ];
+      }
+    ];
   };
 }

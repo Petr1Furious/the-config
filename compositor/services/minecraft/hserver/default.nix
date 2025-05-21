@@ -5,6 +5,9 @@
   ...
 }:
 
+let
+  prometheusExporterPort = "9940";
+in
 {
   virtualisation.compositor.hserver = {
     networks.monitoring.external = true;
@@ -39,6 +42,7 @@
         ports = [
           "25565:25565"
           "24454:24454/udp"
+          "${prometheusExporterPort}:${prometheusExporterPort}"
         ];
         restart = "unless-stopped";
         stdin_open = true;
@@ -65,4 +69,15 @@
         "--exclude=/srv/minecraft/hserver/bluemap"
       ];
     };
+
+  services.prometheus.scrapeConfigs = [
+    {
+      job_name = "hserver";
+      static_configs = [
+        {
+          targets = [ "localhost:${prometheusExporterPort}" ];
+        }
+      ];
+    }
+  ];
 }
