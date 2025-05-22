@@ -20,7 +20,7 @@
     ./sing-box.nix
     ./minecraft
     ./qemu.nix
-    ./monitoring.nix
+    ./monitoring
   ];
 
   boot.loader.systemd-boot.enable = true;

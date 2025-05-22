@@ -27,14 +27,30 @@ in
       analytics.reporting_enabled = false;
     };
     provision = {
+      enable = true;
+
       datasources.settings.datasources = [
         {
           name = "Prometheus";
           type = "prometheus";
           url = "http://localhost:${toString prometheusPort}";
+          uid = "prometheus";
+        }
+      ];
+
+      dashboards.settings.providers = [
+        {
+          name = "my dashboards";
+          options.path = "/etc/grafana-dashboards";
         }
       ];
     };
+  };
+
+  environment.etc."grafana-dashboards/node-exporter-full.json" = {
+    source = ./grafana-dashboards/node-exporter-full.json;
+    user = "grafana";
+    group = "grafana";
   };
 
   services.prometheus = {

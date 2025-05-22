@@ -80,4 +80,10 @@ in
       ];
     }
   ];
+
+  environment.etc."grafana-dashboards/hserver.json" = {
+    source = ./grafana-dashboards/hserver.json;
+    user = "grafana";
+    group = "grafana";
+  };
 }
