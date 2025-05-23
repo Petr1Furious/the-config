@@ -143,24 +143,24 @@ in
       };
     };
 
-    services.prometheus.exporters.restic = {
-      enable = true;
-      inherit repository;
-      inherit rcloneConfigFile;
-      inherit passwordFile;
-      user = exporterUser;
-      port = prometheusExporterPort;
-    };
+    # services.prometheus.exporters.restic = {
+    #   enable = true;
+    #   inherit repository;
+    #   inherit rcloneConfigFile;
+    #   inherit passwordFile;
+    #   user = exporterUser;
+    #   port = prometheusExporterPort;
+    # };
 
-    services.prometheus.scrapeConfigs = [
-      {
-        job_name = "restic";
-        static_configs = [
-          {
-            targets = [ "localhost:${toString prometheusExporterPort}" ];
-          }
-        ];
-      }
-    ];
+    # services.prometheus.scrapeConfigs = [
+    #   {
+    #     job_name = "restic";
+    #     static_configs = [
+    #       {
+    #         targets = [ "localhost:${toString prometheusExporterPort}" ];
+    #       }
+    #     ];
+    #   }
+    # ];
   };
 }

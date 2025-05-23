@@ -21,6 +21,7 @@
     ./minecraft
     ./qemu.nix
     ./monitoring
+    ./website.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

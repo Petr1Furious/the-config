@@ -13,13 +13,13 @@
       StateDirectoryMode = "0700";
       ExecStart = [
         ""
-        "${lib.getExe pkgs-unstable.sing-box} -D \${STATE_DIRECTORY} -c ${config.age.secrets.sing-box-config.path} run"
+        "${lib.getExe pkgs-unstable.sing-box} -D \${STATE_DIRECTORY} -c ${config.age.secrets.sing-box-proxy-all.path} run"
       ];
     };
     wantedBy = [ "multi-user.target" ];
   };
 
-  age.secrets.sing-box-config = {
-    file = ./secrets/sing-box-config.age;
+  age.secrets.sing-box-proxy-all = {
+    file = ./secrets/sing-box-proxy-all.age;
   };
 }
