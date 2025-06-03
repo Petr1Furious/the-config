@@ -38,6 +38,14 @@
 
   i18n.defaultLocale = "en_US.UTF-8";
 
+  nixarr = {
+    enable = true;
+    jellyfin.enable = true;
+    radarr.enable = true;
+    sonarr.enable = true;
+    prowlarr.enable = true;
+  };
+
   users.users.petrtsopa = {
     isNormalUser = true;
     extraGroups = [

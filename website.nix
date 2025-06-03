@@ -14,7 +14,11 @@ let
     group = "nginx";
   };
 
-  singBoxSecretFiles = [ "sing-box-proxy-all" ];
+  singBoxSecretFiles = [
+    "sing-box-proxy-blocked"
+    "sing-box-proxy-all-except-ru"
+    "sing-box-proxy-all"
+  ];
 in
 {
   services.nginx.virtualHosts."petr1furious.me" = {

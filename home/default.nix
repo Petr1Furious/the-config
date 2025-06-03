@@ -26,7 +26,7 @@
       extended = true;
     };
 
-    initExtra = builtins.readFile ./robbyrussel-full-paths.zsh-theme;
+    initContent = builtins.readFile ./robbyrussel-full-paths.zsh-theme;
 
     plugins = [
       {

@@ -16,8 +16,10 @@ let
     "tgauth-key.age"
     "tgauth-env.age"
     "traefik-env.age"
-    "sing-box-proxy-all.age"
     "htpasswd.age"
+    "sing-box-proxy-blocked.age"
+    "sing-box-proxy-all-except-ru.age"
+    "sing-box-proxy-all.age"
   ];
 in
 builtins.listToAttrs (

@@ -2,18 +2,22 @@
   description = "My NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     vscode-server = {
       url = "github:nix-community/nixos-vscode-server";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixarr = {
+      url = "github:rasmus-kirk/nixarr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -26,6 +30,7 @@
       agenix,
       home-manager,
       vscode-server,
+      nixarr,
     }:
     {
       nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem (rec {
@@ -43,6 +48,7 @@
             home-manager.users.petrtsopa = ./home;
           }
           vscode-server.nixosModules.default
+          nixarr.nixosModules.default
         ];
         specialArgs = {
           pkgs-unstable = import nixpkgs-unstable {
