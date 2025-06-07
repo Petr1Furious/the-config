@@ -20,6 +20,7 @@ let
     "sing-box-proxy-blocked.age"
     "sing-box-proxy-all-except-ru.age"
     "sing-box-proxy-all.age"
+    "sing-box-http-proxy.age"
   ];
 in
 builtins.listToAttrs (
