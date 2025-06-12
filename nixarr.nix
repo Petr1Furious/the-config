@@ -47,6 +47,12 @@ in
     transmission.environment = proxyEnv;
   };
 
+  backup.backups.nixarr = {
+    paths = [
+      "/srv/media/.state/nixarr"
+    ];
+  };
+
   traefik.proxies = [
     {
       host = "jellyfin.petr1furious.me";
