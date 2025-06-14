@@ -21,6 +21,7 @@ let
     "sing-box-proxy-all-except-ru.age"
     "sing-box-proxy-all.age"
     "sing-box-http-proxy.age"
+    "nextcloud-admin-password.age"
   ];
 in
 builtins.listToAttrs (

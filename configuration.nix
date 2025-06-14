@@ -23,6 +23,7 @@
     ./monitoring
     ./website.nix
     ./nixarr.nix
+    ./nextcloud.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
