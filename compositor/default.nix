@@ -9,6 +9,7 @@
   imports = [
     ./services/traefik
     ./services/minecraft/hserver
+    ./services/minecraft/minigames
     ./services/vaultwarden
     ./services/tgauth
   ];

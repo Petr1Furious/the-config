@@ -57,12 +57,13 @@ in
       docker = lib.getExe pkgs.docker;
     in
     {
+      repository = "rclone:yandex:/minecraft-backups";
       backupPrepareCommand = ''
         ${docker} exec hserver rcon-cli save-all flush
         ${docker} exec hserver rcon-cli save-off
       '';
       backupCleanupCommand = "${docker} exec hserver rcon-cli save-on";
-      schedule = "*:0/30";
+      schedule = "*:00";
       randomizedDelay = "0";
       paths = [ "/srv/minecraft/hserver" ];
       extraBackupArgs = [

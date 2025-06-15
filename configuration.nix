@@ -86,7 +86,6 @@
   services.openssh.enable = true;
 
   services.vscode-server.enable = true;
-  # services.vscode-server.installPath = "$HOME/.cursor-server";
 
   networking.firewall.allowedTCPPorts = [
     22

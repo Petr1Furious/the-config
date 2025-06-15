@@ -1,10 +1,7 @@
 { config, lib, ... }:
 let
-  repository = "rclone:yandex:/backups";
   rcloneConfigFile = config.age.secrets.rclone-config.path;
   passwordFile = config.age.secrets.restic-key.path;
-  prometheusExporterPort = 9753;
-  exporterUser = "restic-exporter";
 in
 {
   options = with lib; {
@@ -21,6 +18,11 @@ in
                 { name, ... }:
                 {
                   options = {
+                    repository = mkOption {
+                      type = types.str;
+                      default = "rclone:yandex:/backups";
+                      description = "Restic repository to use";
+                    };
                     tag = mkOption {
                       type = types.str;
                       default = name;
@@ -86,7 +88,6 @@ in
     services.restic.backups = lib.mkIf config.backup.enable (
       lib.mapAttrs (name: cfg: {
         initialize = true;
-        inherit repository;
         inherit rcloneConfigFile;
         inherit passwordFile;
         extraBackupArgs =
@@ -113,6 +114,7 @@ in
           RandomizedDelaySec = cfg.randomizedDelay;
         };
         inherit (cfg)
+          repository
           paths
           dynamicFilesFrom
           backupPrepareCommand
@@ -121,46 +123,13 @@ in
       }) config.backup.backups
     );
 
-    users.users.restic-exporter = {
-      isSystemUser = true;
-      createHome = false;
-      group = "restic-exporter";
-    };
-    users.groups."restic-exporter" = { };
-
     age.secrets = lib.mkIf config.backup.enable {
       restic-key = {
         file = ./secrets/restic-key.age;
-        mode = "440";
-        owner = "root";
-        group = exporterUser;
       };
       rclone-config = {
         file = ./secrets/rclone-config.age;
-        mode = "440";
-        owner = "root";
-        group = exporterUser;
       };
     };
-
-    # services.prometheus.exporters.restic = {
-    #   enable = true;
-    #   inherit repository;
-    #   inherit rcloneConfigFile;
-    #   inherit passwordFile;
-    #   user = exporterUser;
-    #   port = prometheusExporterPort;
-    # };
-
-    # services.prometheus.scrapeConfigs = [
-    #   {
-    #     job_name = "restic";
-    #     static_configs = [
-    #       {
-    #         targets = [ "localhost:${toString prometheusExporterPort}" ];
-    #       }
-    #     ];
-    #   }
-    # ];
   };
 }

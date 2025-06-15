@@ -5,6 +5,9 @@
   ...
 }:
 
+let
+  prometheusExporterPort = "19565";
+in
 {
   users.users.minecraft = {
     isNormalUser = true;
@@ -25,6 +28,7 @@
       export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
     in
     {
+      repository = "rclone:yandex:/minecraft-backups";
       backupPrepareCommand = ''
         ${export_docker_host}
         ${docker} exec modded_hserver rcon-cli save-all flush
@@ -34,7 +38,7 @@
         ${export_docker_host}
         ${docker} exec modded_hserver rcon-cli save-on
       '';
-      schedule = "*:0/30";
+      schedule = "*:30";
       randomizedDelay = "0";
       paths = [ "/home/minecraft/modded-hserver" ];
     };
@@ -49,4 +53,21 @@
       target = "http://localhost:3876";
     }
   ];
+
+  services.prometheus.scrapeConfigs = [
+    {
+      job_name = "modded-hserver";
+      static_configs = [
+        {
+          targets = [ "localhost:${prometheusExporterPort}" ];
+        }
+      ];
+    }
+  ];
+
+  environment.etc."grafana-dashboards/modded-hserver.json" = {
+    source = ./grafana-dashboards/modded-hserver.json;
+    user = "grafana";
+    group = "grafana";
+  };
 }

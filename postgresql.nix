@@ -9,4 +9,4 @@
   services.postgresql = {
     enable = true;
   };
-} 
+}
