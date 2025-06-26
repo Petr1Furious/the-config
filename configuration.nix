@@ -87,6 +87,11 @@
 
   services.vscode-server.enable = true;
 
+  services.vscode-server.installPath = [
+    "$HOME/.vscode-server"
+    "$HOME/.cursor-server"
+  ];
+
   networking.firewall.allowedTCPPorts = [
     22
     80
