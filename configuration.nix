@@ -19,7 +19,7 @@
     ./immich.nix
     ./sing-box.nix
     ./minecraft
-    ./qemu.nix
+    ./qemu
     ./monitoring
     ./website.nix
     ./nixarr.nix

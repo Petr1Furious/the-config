@@ -54,4 +54,11 @@
     userName = "Petr Tsopa";
     userEmail = "petrtsopa03@gmail.com";
   };
+
+  programs.vim = {
+    enable = true;
+    extraConfig = ''
+      set mouse-=a
+    '';
+  };
 }
