@@ -59,11 +59,11 @@ in
     after = [ "libvirtd.service" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = ''
-        ${pkgs.libvirt}/bin/virsh --connect qemu:///system net-define ${./default-net.xml}
-        ${pkgs.libvirt}/bin/virsh --connect qemu:///system net-autostart default
-        ${pkgs.libvirt}/bin/virsh --connect qemu:///system net-start default
-      '';
+      ExecStart = [
+        "${pkgs.libvirt}/bin/virsh --connect qemu:///system net-define ${./default-net.xml}"
+        "${pkgs.libvirt}/bin/virsh --connect qemu:///system net-autostart default"
+        "${pkgs.libvirt}/bin/virsh --connect qemu:///system net-start default"
+      ];
     };
     restartIfChanged = true;
     wantedBy = [ "multi-user.target" ];

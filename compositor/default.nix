@@ -12,6 +12,7 @@
     ./services/minecraft/minigames
     ./services/vaultwarden
     ./services/tgauth
+    ./services/overleaf
   ];
 
   options = with lib; {
