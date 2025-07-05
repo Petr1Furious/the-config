@@ -20,7 +20,7 @@
           TYPE = "PAPER";
           TZ = "Europe/Moscow";
           USE_AIKAR_FLAGS = "TRUE";
-          VERSION = "1.21.1";
+          VERSION = "1.21.4";
         };
         image = "itzg/minecraft-server:java21-graalvm";
         ports = [
