@@ -25,6 +25,7 @@
         image = "itzg/minecraft-server:java21-graalvm";
         ports = [
           "25567:25565"
+          "24456:24456/udp"
         ];
         restart = "unless-stopped";
         stdin_open = true;

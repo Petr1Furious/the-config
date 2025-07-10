@@ -24,6 +24,7 @@
     ./website.nix
     ./nixarr.nix
     ./nextcloud.nix
+    ./openrgb
   ];
 
   boot.loader.systemd-boot.enable = true;
