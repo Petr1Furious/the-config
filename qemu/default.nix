@@ -82,4 +82,23 @@ in
     restartIfChanged = true;
     wantedBy = [ "multi-user.target" ];
   };
+
+  systemd.services.vfio-gpu-reset = {
+    description = "Reset GPU using minimal QEMU";
+    after = [ "systemd-modules-load.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "reset-gpu-qemu" ''
+        echo "quit" | timeout 10s ${pkgs.qemu}/bin/qemu-system-x86_64 \
+          -machine q35 \
+          -device vfio-pci,host=01:00.0 \
+          -device vfio-pci,host=01:00.1 \
+          -nographic \
+          -serial none \
+          -monitor stdio <<< "quit" || true
+      '';
+      RemainAfterExit = true;
+    };
+  };
 }
