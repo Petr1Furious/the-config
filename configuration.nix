@@ -73,6 +73,8 @@
     iotop
     pciutils
     ncdu
+    zip
+    unzip
     pkgs-unstable.sing-box
     pkgs-unstable.rustup
   ];

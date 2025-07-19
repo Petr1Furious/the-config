@@ -7,6 +7,32 @@
 
 let
   prometheusExporterPort = "19565";
+
+  docker = lib.getExe pkgs.docker;
+  export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
+
+  make-minecraft-backups = container_names: {
+    repository = "rclone:yandex:/minecraft-backups";
+    backupPrepareCommand =
+      ''
+        ${export_docker_host}
+      ''
+      + (lib.concatStringsSep "\n" (
+        map (name: ''
+          ${docker} exec ${name} rcon-cli save-all flush
+          ${docker} exec ${name} rcon-cli save-off
+        '') container_names
+      ));
+    backupCleanupCommand =
+      ''
+        ${export_docker_host}
+      ''
+      + (lib.concatStringsSep "\n" (
+        map (name: ''
+          ${docker} exec ${name} rcon-cli save-on
+        '') container_names
+      ));
+  };
 in
 {
   users.users.minecraft = {
@@ -22,25 +48,21 @@ in
 
   virtualisation.docker.rootless.enable = true;
 
-  backup.backups.modded-hserver =
-    let
-      docker = lib.getExe pkgs.docker;
-      export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
-    in
-    {
-      repository = "rclone:yandex:/minecraft-backups";
-      backupPrepareCommand = ''
-        ${export_docker_host}
-        ${docker} exec modded_hserver rcon-cli save-all flush
-        ${docker} exec modded_hserver rcon-cli save-off
-      '';
-      backupCleanupCommand = ''
-        ${export_docker_host}
-        ${docker} exec modded_hserver rcon-cli save-on
-      '';
-      schedule = "*:30";
-      randomizedDelay = "0";
-      paths = [ "/home/minecraft/modded-hserver" ];
+  backup.backups.modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
+    paths = [ "/home/minecraft/modded-hserver" ];
+    schedule = "*:30";
+    randomizedDelay = "0";
+  };
+
+  backup.backups.minigames =
+    make-minecraft-backups [
+      "minigames-main"
+      "minigames-bedwars"
+    ]
+    // {
+      paths = [ "/home/minecraft/minigames" ];
+      schedule = "00/8:00:00";
+      randomizedDelay = "1h";
     };
 
   traefik.proxies = [
