@@ -65,7 +65,7 @@ in
                     };
                     schedule = mkOption {
                       type = types.str;
-                      default = "00/8:00:00";
+                      default = "*-*-* 08:00:00";
                       description = "When to run the backup, using systemd calendar syntax";
                     };
                     randomizedDelay = mkOption {

@@ -25,6 +25,7 @@
     ./nixarr.nix
     ./nextcloud.nix
     ./openrgb
+    ./mounts.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -75,6 +76,7 @@
     ncdu
     zip
     unzip
+    nodejs_24
     pkgs-unstable.sing-box
     pkgs-unstable.rustup
   ];
