@@ -74,3 +74,13 @@ lib.mkMerge [
     publicDir = "${userHome}/public-yandex";
   })
 ]
+// {
+  backup.backups.potato-launcher = {
+    paths = [
+      "/home/potato-launcher"
+    ];
+    extraBackupArgs = [
+      "--exclude=/home/potato-launcher/.cache"
+    ];
+  };
+}

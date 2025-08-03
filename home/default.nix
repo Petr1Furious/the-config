@@ -26,8 +26,6 @@
       extended = true;
     };
 
-    initContent = builtins.readFile ./robbyrussel-full-paths.zsh-theme;
-
     plugins = [
       {
         name = "powerlevel10k";
