@@ -12,6 +12,11 @@
           options = {
             host = mkOption { type = types.str; };
             target = mkOption { type = types.str; };
+
+            certResolver = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+            };
           };
         }
       );
@@ -31,10 +36,17 @@
                   entryId = builtins.replaceStrings [ "." ] [ "__" ] entry.host;
                 in
                 {
-                  routers.${entryId} = {
-                    service = entryId;
-                    rule = "Host(`${entry.host}`)";
-                  };
+                  routers.${entryId} = (
+                    {
+                      service = entryId;
+                      rule = "Host(`${entry.host}`)";
+                    }
+                    // lib.optionalAttrs (entry.certResolver != null) {
+                      tls = {
+                        certResolver = entry.certResolver;
+                      };
+                    }
+                  );
                   services.${entryId}.loadBalancer.servers = [ { url = entry.target; } ];
                 }
               ) config.traefik.proxies

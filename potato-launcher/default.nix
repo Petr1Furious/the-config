@@ -12,7 +12,11 @@ let
   userHome = config.users.users.${userName}.home;
 
   createMcService =
-    { domainName, publicDir }:
+    {
+      domainName,
+      publicDir,
+      certResolver,
+    }:
     {
       services.nginx.virtualHosts.${domainName} = {
         locations."= /" = {
@@ -35,6 +39,7 @@ let
         {
           host = domainName;
           target = "http://127.0.0.1:${toString config.setup.nginxPort}";
+          inherit certResolver;
         }
       ];
 
@@ -62,16 +67,19 @@ lib.mkMerge [
   (createMcService {
     domainName = "mc.petr1furious.me";
     publicDir = "${userHome}/public";
+    certResolver = null;
   })
 
   (createMcService {
     domainName = "hseminecraft.ru";
     publicDir = "${userHome}/public-hse";
+    certResolver = null;
   })
 
   (createMcService {
     domainName = "launcher.ya-mc.tech";
     publicDir = "${userHome}/public-yandex";
+    certResolver = "http01";
   })
 ]
 // {

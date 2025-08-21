@@ -23,7 +23,7 @@ in
           TYPE = "PAPER";
           TZ = "Europe/Moscow";
           USE_AIKAR_FLAGS = "TRUE";
-          VERSION = "1.21.4";
+          VERSION = "1.21.8";
         };
         image = "itzg/minecraft-server:java21-graalvm";
         labels = [
