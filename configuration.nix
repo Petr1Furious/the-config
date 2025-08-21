@@ -104,6 +104,13 @@
   ];
   networking.firewall.allowedUDPPorts = [ 443 ];
 
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 8 * 1024;
+    }
+  ];
+
   system.stateVersion = "24.11"; # Do not touch this value unless you know what you are doing.
 
   virtualisation.vmVariant = {
