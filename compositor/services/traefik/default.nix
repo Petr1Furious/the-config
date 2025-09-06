@@ -34,6 +34,13 @@
                 entry:
                 let
                   entryId = builtins.replaceStrings [ "." ] [ "__" ] entry.host;
+                  autoCertResolver =
+                    if entry.certResolver != null then
+                      entry.certResolver
+                    else if lib.hasSuffix "petr1furious.me" entry.host then
+                      "default"
+                    else
+                      null;
                 in
                 {
                   routers.${entryId} = (
@@ -41,9 +48,9 @@
                       service = entryId;
                       rule = "Host(`${entry.host}`)";
                     }
-                    // lib.optionalAttrs (entry.certResolver != null) {
+                    // lib.optionalAttrs (autoCertResolver != null) {
                       tls = {
-                        certResolver = entry.certResolver;
+                        certResolver = autoCertResolver;
                       };
                     }
                   );

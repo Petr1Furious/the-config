@@ -74,6 +74,10 @@ in
       host = "metro.hseminecraft.ru";
       target = "http://localhost:3876";
     }
+    {
+      host = "map.mipt.petr1furious.me";
+      target = "http://localhost:8101";
+    }
   ];
 
   services.prometheus.scrapeConfigs = [

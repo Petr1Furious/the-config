@@ -77,9 +77,9 @@ lib.mkMerge [
   })
 
   (createMcService {
-    domainName = "launcher.ya-mc.tech";
-    publicDir = "${userHome}/public-yandex";
-    certResolver = "http01";
+    domainName = "mipt.petr1furious.me";
+    publicDir = "${userHome}/public-mipt";
+    certResolver = null;
   })
 ]
 // {
