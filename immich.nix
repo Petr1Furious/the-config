@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  pkgs-unstable,
   ...
 }:
 
@@ -13,6 +14,7 @@ in
     enable = true;
     mediaLocation = "/srv/immich";
     settings.server.externalDomain = "https://${hostName}";
+    package = pkgs-unstable.immich;
   };
 
   traefik.proxies = [
