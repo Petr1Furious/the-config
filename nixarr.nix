@@ -6,7 +6,7 @@
 }:
 
 let
-  proxyPort = 1080;
+  proxyPort = 10809;
 
   proxyEnv = {
     HTTP_PROXY = "http://127.0.0.1:${toString proxyPort}";
