@@ -1,0 +1,167 @@
+{
+    "log": {
+        "loglevel": "warning"
+    },
+    "inbounds": [
+        {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls",
+                    "quic"
+                ],
+                "routeOnly": false
+            },
+            "settings": {
+                "udp": true
+            }
+        },
+        {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls",
+                    "quic"
+                ],
+                "routeOnly": false
+            },
+            "settings": {
+                "allowTransparent": false
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "tag": "direct",
+            "protocol": "freedom"
+        },
+        {
+            "tag": "proxy",
+            "protocol": "vless",
+            "settings": {
+                "vnext": [
+                    {
+                        "address": "{{address}}",
+                        "port": 443,
+                        "users": [
+                            {
+                                "id": "{{uuid}}",
+                                "encryption": "none",
+                                "alterId": 0,
+                                "flow": "xtls-rprx-vision"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "reality",
+                "realitySettings": {
+                    "serverName": "{{serverName}}",
+                    "fingerprint": "chrome",
+                    "show": false,
+                    "publicKey": "{{publicKey}}",
+                    "shortId": "{{shortId}}"
+                }
+            }
+        },
+        {
+            "tag": "block",
+            "protocol": "blackhole"
+        }
+    ],
+    "dns": {
+        "hosts": {
+            "dns.google": [
+                "8.8.8.8",
+                "8.8.4.4"
+            ]
+        },
+        "servers": [
+            {
+                "address": "https://1.1.1.1/dns-query",
+                "timeoutMs": 5000
+            },
+            {
+                "address": "https://dns.google/dns-query",
+                "timeoutMs": 5000
+            }
+        ],
+        "queryStrategy": "UseIP",
+        "disableCache": false,
+        "disableFallback": false,
+        "tag": "dns-out"
+    },
+    "routing": {
+        "domainStrategy": "IPIfNonMatch",
+        "rules": [
+            {
+                "type": "field",
+                "inboundTag": [
+                    "dns-out"
+                ],
+                "outboundTag": "proxy"
+            },
+            {
+                "type": "field",
+                "port": "53",
+                "outboundTag": "proxy"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:private"
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:category-ads-all"
+                ],
+                "outboundTag": "block"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:ru-available-only-inside"
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "type": "field",
+                "ip": [
+                    "geoip:ru"
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:ru-blocked"
+                ],
+                "outboundTag": "proxy"
+            },
+            {
+                "type": "field",
+                "ip": [
+                    "geoip:ru-blocked",
+                    "geoip:ru-blocked-community",
+                    "geoip:re-filter"
+                ],
+                "outboundTag": "proxy"
+            }
+        ]
+    }
+}

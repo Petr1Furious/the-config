@@ -17,11 +17,11 @@
     ./jitsi.nix
     ./nginx.nix
     ./immich.nix
-    ./sing-box.nix
+    ./proxy.nix
     ./minecraft
     ./qemu
     ./monitoring
-    ./website.nix
+    ./website
     ./nixarr.nix
     ./nextcloud.nix
     ./openrgb
