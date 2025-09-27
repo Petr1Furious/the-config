@@ -326,6 +326,42 @@ in
         };
         unitConfig.Description = "Timer for autorestic-cron";
       };
+
+      systemd.services.autorestic-prune = {
+        description = "Autorestic weekly prune";
+        after = [
+          "network-online.target"
+          "systemd-tmpfiles-setup.service"
+        ];
+        wants = [ "network-online.target" ];
+        serviceConfig = {
+          Type = "oneshot";
+          Nice = 10;
+          IOSchedulingClass = "idle";
+        };
+        path = [
+          pkgs.autorestic
+          pkgs.restic
+          pkgs.rclone
+          pkgs.coreutils
+          pkgs.bash
+        ];
+        environment = env;
+        script = ''
+          ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci forget -a --prune -- --retry-lock=1h
+        '';
+      };
+
+      systemd.timers.autorestic-prune = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "Sun 03:30";
+          RandomizedDelaySec = "15m";
+          Persistent = true;
+          AccuracySec = "5m";
+        };
+        unitConfig.Description = "Timer for autorestic-prune";
+      };
     }
   );
 }
