@@ -9,7 +9,7 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./restic.nix
+    ./backup
     ./compositor
     ./potato-launcher
     ./postgres.nix
@@ -85,8 +85,6 @@
     enable = true;
     enableGlobalCompInit = false;
   };
-
-  backup.enable = true;
 
   services.openssh.enable = true;
 

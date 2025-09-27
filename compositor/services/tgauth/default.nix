@@ -45,5 +45,7 @@
     }
   ];
 
-  backup.backups.tgauth.paths = [ "/srv/tgauth-data" ];
+  backup.locations.tgauth = {
+    from = [ "/srv/tgauth-data" ];
+  };
 }

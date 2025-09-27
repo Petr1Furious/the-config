@@ -12,26 +12,34 @@ let
   export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
 
   make-minecraft-backups = container_names: {
-    repository = "rclone:yandex:/minecraft-backups";
-    backupPrepareCommand =
-      ''
-        ${export_docker_host}
-      ''
-      + (lib.concatStringsSep "\n" (
-        map (name: ''
-          ${docker} exec ${name} rcon-cli save-all flush
-          ${docker} exec ${name} rcon-cli save-off
-        '') container_names
-      ));
-    backupCleanupCommand =
-      ''
-        ${export_docker_host}
-      ''
-      + (lib.concatStringsSep "\n" (
-        map (name: ''
-          ${docker} exec ${name} rcon-cli save-on
-        '') container_names
-      ));
+    to = [ "yandex-minecraft" ];
+    hooks = {
+      prevalidate = [
+        (
+          ''
+            ${export_docker_host}
+          ''
+          + (lib.concatStringsSep "\n" (
+            map (name: ''
+              ${docker} exec ${name} rcon-cli save-all flush
+              ${docker} exec ${name} rcon-cli save-off
+            '') container_names
+          ))
+        )
+      ];
+      after = [
+        (
+          ''
+            ${export_docker_host}
+          ''
+          + (lib.concatStringsSep "\n" (
+            map (name: ''
+              ${docker} exec ${name} rcon-cli save-on
+            '') container_names
+          ))
+        )
+      ];
+    };
   };
 in
 {
@@ -49,21 +57,19 @@ in
 
   virtualisation.docker.rootless.enable = true;
 
-  backup.backups.modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
-    paths = [ "/home/minecraft/modded-hserver" ];
-    schedule = "*:30";
-    randomizedDelay = "0";
+  backup.locations.modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
+    from = [ "/home/minecraft/modded-hserver" ];
+    cron = "30 * * * *";
   };
 
-  backup.backups.minigames =
+  backup.locations.minigames =
     make-minecraft-backups [
       "minigames-main"
       "minigames-bedwars"
     ]
     // {
-      paths = [ "/home/minecraft/minigames" ];
-      schedule = "00/8:00:00";
-      randomizedDelay = "1h";
+      from = [ "/home/minecraft/minigames" ];
+      cron = "0 8 * * *";
     };
 
   traefik.proxies = [

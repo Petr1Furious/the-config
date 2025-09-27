@@ -17,13 +17,21 @@
 
   networking.firewall.allowedTCPPorts = [ 5432 ];
 
-  backup.backups.postgres = {
-    backupPrepareCommand = ''
-      export PATH=${config.services.postgresql.package}/bin:${pkgs.zstd}/bin:$PATH
-      /run/wrappers/bin/sudo -u postgres pg_dumpall | zstd -T4 > /tmp/postgres.sql.zst
-    '';
-    paths = [ "/tmp/postgres.sql.zst" ];
-    extraBackupArgs = [ "--compression=off" ];
-    backupCleanupCommand = "rm /tmp/postgres.sql.zst";
+  backup.locations.postgres = {
+    hooks = {
+      prevalidate = [
+        ''
+          export PATH=${config.services.postgresql.package}/bin:${pkgs.zstd}/bin:$PATH
+          /run/wrappers/bin/sudo -u postgres pg_dumpall | zstd -T4 > /tmp/postgres.sql.zst
+        ''
+      ];
+      after = [ "rm /tmp/postgres.sql.zst" ];
+    };
+    from = [ "/tmp/postgres.sql.zst" ];
+    options = {
+      backup = {
+        compression = "off";
+      };
+    };
   };
 }

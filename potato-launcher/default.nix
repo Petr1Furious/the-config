@@ -83,12 +83,16 @@ lib.mkMerge [
   })
 ]
 // {
-  backup.backups.potato-launcher = {
-    paths = [
+  backup.locations.potato-launcher = {
+    from = [
       "/home/potato-launcher"
     ];
-    extraBackupArgs = [
-      "--exclude=/home/potato-launcher/.cache"
-    ];
+    options = {
+      backup = {
+        exclude = [
+          "/home/potato-launcher/.cache"
+        ];
+      };
+    };
   };
 }

@@ -48,7 +48,10 @@
         restart = "unless-stopped";
         image = "mongo:6.0";
         container_name = "sharelatex-mongo";
-        command = ["--replSet" "overleaf"];
+        command = [
+          "--replSet"
+          "overleaf"
+        ];
         expose = [
           "27017"
         ];
@@ -84,8 +87,8 @@
     };
   };
 
-  backup.backups.overleaf = {
-    paths = [
+  backup.locations.overleaf = {
+    from = [
       "/srv/overleaf"
     ];
   };

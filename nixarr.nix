@@ -47,8 +47,8 @@ in
     transmission.environment = proxyEnv;
   };
 
-  backup.backups.nixarr = {
-    paths = [
+  backup.locations.nixarr = {
+    from = [
       "/srv/media/.state/nixarr"
     ];
   };

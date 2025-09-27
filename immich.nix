@@ -24,8 +24,8 @@ in
     }
   ];
 
-  backup.backups.immich = {
-    paths = [
+  backup.locations.immich = {
+    from = [
       "/srv/immich"
     ];
   };

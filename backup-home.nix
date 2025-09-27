@@ -6,24 +6,32 @@
 }:
 
 {
-  backup.backups.root = {
-    paths = [
+  backup.locations.root = {
+    from = [
       "/root"
     ];
-    extraBackupArgs = [
-      "--exclude=/root/.cache"
-    ];
+    options = {
+      backup = {
+        exclude = [
+          "/root/.cache"
+        ];
+      };
+    };
   };
 
-  backup.backups.home = {
-    paths = [
+  backup.locations.home = {
+    from = [
       "/home/petrtsopa"
     ];
-    extraBackupArgs = [
-      "--exclude=/home/petrtsopa/.cache"
-      "--exclude=/home/petrtsopa/.vscode-server"
-      "--exclude=/home/petrtsopa/.cursor-server"
-      "--exclude=/home/petrtsopa/.vscode-remote-containers"
-    ];
+    options = {
+      backup = {
+        exclude = [
+          "/home/petrtsopa/.cache"
+          "/home/petrtsopa/.vscode-server"
+          "/home/petrtsopa/.cursor-server"
+          "/home/petrtsopa/.vscode-remote-containers"
+        ];
+      };
+    };
   };
 }

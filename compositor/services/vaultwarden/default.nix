@@ -30,5 +30,7 @@
     };
   };
 
-  backup.backups.vaultwarden.paths = [ "/srv/vaultwarden" ];
+  backup.locations.vaultwarden = {
+    from = [ "/srv/vaultwarden" ];
+  };
 }

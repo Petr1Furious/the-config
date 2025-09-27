@@ -63,8 +63,8 @@ in
     }
   ];
 
-  backup.backups.nextcloud = {
-    paths = [
+  backup.locations.nextcloud = {
+    from = [
       nextCloudHome
     ];
   };

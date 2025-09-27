@@ -52,23 +52,30 @@ in
     };
   };
 
-  backup.backups.hserver =
+  backup.locations.hserver =
     let
       docker = lib.getExe pkgs.docker;
     in
     {
-      repository = "rclone:yandex:/minecraft-backups";
-      backupPrepareCommand = ''
-        ${docker} exec hserver rcon-cli save-all flush
-        ${docker} exec hserver rcon-cli save-off
-      '';
-      backupCleanupCommand = "${docker} exec hserver rcon-cli save-on";
-      schedule = "*:00";
-      randomizedDelay = "0";
-      paths = [ "/srv/minecraft/hserver" ];
-      extraBackupArgs = [
-        "--exclude=/srv/minecraft/hserver/bluemap"
-      ];
+      from = [ "/srv/minecraft/hserver" ];
+      to = [ "yandex-minecraft" ];
+      hooks = {
+        prevalidate = [
+          ''
+            ${docker} exec hserver rcon-cli save-all flush
+            ${docker} exec hserver rcon-cli save-off
+          ''
+        ];
+        after = [ "${docker} exec hserver rcon-cli save-on" ];
+      };
+      cron = "0 * * * *";
+      options = {
+        backup = {
+          exclude = [
+            "/srv/minecraft/hserver/bluemap"
+          ];
+        };
+      };
     };
 
   services.prometheus.scrapeConfigs = [
