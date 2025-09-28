@@ -85,6 +85,37 @@ in
             };
             default = { };
           };
+
+          options = mkOption {
+            description = "Global restic options merged into each location";
+            type = types.submodule {
+              options = {
+                all = mkOption {
+                  type = types.attrsOf (
+                    types.oneOf [
+                      types.bool
+                      types.int
+                      types.str
+                      (types.listOf types.str)
+                    ]
+                  );
+                  default = { };
+                };
+                backup = mkOption {
+                  type = types.attrsOf (
+                    types.oneOf [
+                      types.bool
+                      types.int
+                      types.str
+                      (types.listOf types.str)
+                    ]
+                  );
+                  default = { };
+                };
+              };
+            };
+            default = { };
+          };
         };
       };
       default = { };
@@ -221,16 +252,28 @@ in
       );
       default = { };
     };
+
+    defaultTo = mkOption {
+      description = "List of backend names used when a location does not specify 'to'.";
+      type = types.listOf types.str;
+      default = [ ];
+    };
   };
 
   config = mkIf cfg.enable (
     let
       globalForget = filterNulls cfg.global.forget;
+      globalAll = cfg.global.options.all;
+      globalBackup = cfg.global.options.backup;
 
       autoresticYaml = {
         version = 2;
 
-        global = lib.optionalAttrs (globalForget != { }) { forget = globalForget; };
+        global =
+          { }
+          // lib.optionalAttrs (globalForget != { }) { forget = globalForget; }
+          // lib.optionalAttrs (globalAll != { }) { all = globalAll; }
+          // lib.optionalAttrs (globalBackup != { }) { backup = globalBackup; };
 
         backends = mapAttrs (_: b: { inherit (b) type path; }) cfg.backends;
 
@@ -243,9 +286,11 @@ in
               // lib.optionalAttrs (l.options.all != { }) { all = l.options.all; }
               // lib.optionalAttrs (l.options.backup != { }) { backup = l.options.backup; }
               // lib.optionalAttrs (locForget != { }) { forget = locForget; };
+            locTo = if (l.to != [ ]) then l.to else cfg.defaultTo;
           in
           {
-            inherit (l) from to cron;
+            inherit (l) from cron;
+            to = locTo;
             hooks = l.hooks;
             forget = l.forget;
             options = lib.optionalAttrs (locOptions != { }) locOptions;
@@ -275,6 +320,31 @@ in
         // lib.optionalAttrs (cfg.passwordFilePath != null) { RESTIC_PASSWORD_FILE = cfg.passwordFilePath; }
         // lib.optionalAttrs (cfg.rcloneConfigPath != null) { RCLONE_CONFIG = cfg.rcloneConfigPath; }
         // perBackendEnv;
+
+      autoresticDir = builtins.dirOf cfg.autoresticYamlPath;
+      autoresticLocalLock = "${autoresticDir}/.autorestic.lock.yml";
+
+      cleanLocalLock = pkgs.writeShellScript "autorestic-clean-local-lock" ''
+        set -euo pipefail
+        LOCK="${autoresticLocalLock}"
+
+        if pgrep -f "autorestic.*-c[ =]${cfg.autoresticYamlPath}" >/dev/null 2>&1; then
+          exit 0
+        fi
+
+        if [ -f "$LOCK" ]; then
+          if grep -qE '^[[:space:]]*running:[[:space:]]*true([[:space:]]|$)' "$LOCK"; then
+            now=$(date +%s)
+            mtime=$(stat -c %Y "$LOCK")
+            age=$((now - mtime))
+            max_age=$((2 * 60 * 60))
+            if [ "$age" -gt "$max_age" ]; then
+              echo "WARNING: Stale lock file found (age: ''${age}s), removing"
+              rm -f "$LOCK"
+            fi
+          fi
+        fi
+      '';
     in
     {
       assertions = [
@@ -288,9 +358,14 @@ in
             || (!lib.any (n: cfg.backends.${n}.type == "rclone") (lib.attrNames cfg.backends));
           message = "backup.rcloneConfigPath must be set when any backend type is 'rclone'";
         }
+        {
+          assertion = lib.all (b: lib.hasAttr b cfg.backends) cfg.defaultTo;
+          message = "backup.defaultTo contains unknown backend name(s)";
+        }
       ];
 
       systemd.tmpfiles.rules = [
+        "d ${builtins.dirOf cfg.autoresticYamlPath} 0750 root root -"
         "L+ ${cfg.autoresticYamlPath} - - - - ${autoresticFile}"
       ];
 
@@ -303,6 +378,7 @@ in
         wants = [ "network-online.target" ];
         serviceConfig = {
           Type = "oneshot";
+          ExecStartPre = "${cleanLocalLock}";
         };
         path = [
           pkgs.autorestic
@@ -310,10 +386,12 @@ in
           pkgs.rclone
           pkgs.coreutils
           pkgs.bash
+          pkgs.procps
+          pkgs.gnugrep
         ];
         environment = env;
         script = ''
-          ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci cron
+          ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci cron --lean
         '';
       };
 
@@ -338,6 +416,7 @@ in
           Type = "oneshot";
           Nice = 10;
           IOSchedulingClass = "idle";
+          ExecStartPre = "${cleanLocalLock}";
         };
         path = [
           pkgs.autorestic
@@ -345,6 +424,8 @@ in
           pkgs.rclone
           pkgs.coreutils
           pkgs.bash
+          pkgs.procps
+          pkgs.gnugrep
         ];
         environment = env;
         script = ''
