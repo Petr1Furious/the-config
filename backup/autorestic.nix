@@ -45,6 +45,12 @@ in
       default = "/srv/autorestic/autorestic.yml";
     };
 
+    cacheDir = mkOption {
+      type = types.nullOr types.path;
+      default = "/var/cache/restic";
+      description = "Directory for persistent restic cache";
+    };
+
     global = mkOption {
       description = "Global Autorestic settings";
       type = types.submodule {
@@ -319,6 +325,9 @@ in
         { }
         // lib.optionalAttrs (cfg.passwordFilePath != null) { RESTIC_PASSWORD_FILE = cfg.passwordFilePath; }
         // lib.optionalAttrs (cfg.rcloneConfigPath != null) { RCLONE_CONFIG = cfg.rcloneConfigPath; }
+        // lib.optionalAttrs (cfg.cacheDir != null) {
+          RESTIC_CACHE_DIR = cfg.cacheDir;
+        }
         // perBackendEnv;
 
       autoresticDir = builtins.dirOf cfg.autoresticYamlPath;
@@ -367,6 +376,9 @@ in
       systemd.tmpfiles.rules = [
         "d ${builtins.dirOf cfg.autoresticYamlPath} 0750 root root -"
         "L+ ${cfg.autoresticYamlPath} - - - - ${autoresticFile}"
+      ]
+      ++ lib.optionals (cfg.cacheDir != null) [
+        "d ${cfg.cacheDir} 0700 root root -"
       ];
 
       systemd.services.autorestic-cron = {
