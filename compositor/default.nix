@@ -9,7 +9,6 @@
   imports = [
     ./services/traefik
     ./services/minecraft/hserver
-    ./services/vaultwarden
     ./services/tgauth
     ./services/overleaf
   ];

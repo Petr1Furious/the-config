@@ -26,6 +26,7 @@
     ./nextcloud.nix
     ./openrgb
     ./mounts.nix
+    ./vaultwarden.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
