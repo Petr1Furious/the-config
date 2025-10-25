@@ -23,6 +23,8 @@ let
     "sing-box-http-proxy.age"
     "nextcloud-admin-password.age"
     "xray-proxy.age"
+    "pterodactyl-panel-env.age"
+    "pterodactyl-db-env.age"
   ];
 in
 builtins.listToAttrs (

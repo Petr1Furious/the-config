@@ -11,6 +11,7 @@
     ./services/minecraft/hserver
     ./services/tgauth
     ./services/overleaf
+    ./services/pterodactyl
   ];
 
   options = with lib; {
