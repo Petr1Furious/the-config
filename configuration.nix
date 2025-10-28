@@ -113,20 +113,8 @@
 
   system.stateVersion = "24.11"; # Do not touch this value unless you know what you are doing.
 
-  virtualisation.vmVariant = {
-    security.sudo.wheelNeedsPassword = false;
-    virtualisation = {
-      graphics = false;
-      memorySize = 4096;
-      cores = 16;
-      diskSize = 10 * 1024;
-      forwardPorts = [
-        {
-          from = "host";
-          host.port = 2222;
-          guest.port = 22;
-        }
-      ];
-    };
-  };
+  nixpkgs.config.permittedInsecurePackages = [
+    "mbedtls-2.28.10"
+    "jitsi-meet-1.0.8043"
+  ];
 }
