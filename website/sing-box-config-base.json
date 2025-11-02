@@ -1,0 +1,216 @@
+{
+    "log": {
+        "level": "warn"
+    },
+    "dns": {
+        "servers": [
+            {
+                "tag": "remote-doh-1",
+                "type": "https",
+                "server": "1.1.1.1",
+                "domain_resolver": "local-dns",
+                "detour": "proxy"
+            },
+            {
+                "tag": "remote-doh-2",
+                "type": "https",
+                "server": "dns.google",
+                "domain_resolver": "local-dns",
+                "detour": "proxy"
+            },
+            {
+                "tag": "local-dns",
+                "type": "local",
+                "detour": "direct"
+            }
+        ],
+        "rules": [
+            {
+                "rule_set": [
+                    "category-ads-all"
+                ],
+                "action": "predefined",
+                "rcode": "NXDOMAIN"
+            },
+            {
+                "rule_set": [
+                    "geosite-ru-blocked"
+                ],
+                "server": "remote-doh-1"
+            }
+        ],
+        "final": "remote-doh-1",
+        "strategy": "prefer_ipv4"
+    },
+    "inbounds": [
+        {
+            "type": "socks",
+            "tag": "socks-in",
+            "listen": "127.0.0.1",
+            "listen_port": 10808,
+            "sniff": true,
+            "sniff_override_destination": true
+        },
+        {
+            "type": "http",
+            "tag": "http-in",
+            "listen": "127.0.0.1",
+            "listen_port": 10809,
+            "sniff": true
+        },
+        {
+            "type": "tun",
+            "tag": "tun-in",
+            "address": "172.16.0.1/30",
+            "mtu": 1400,
+            "auto_route": true,
+            "strict_route": false,
+            "sniff": true
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "direct",
+            "tag": "direct"
+        },
+        {
+            "type": "vless",
+            "tag": "proxy",
+            "server": "{{address}}",
+            "server_port": 443,
+            "uuid": "{{uuid}}",
+            "flow": "xtls-rprx-vision",
+            "tls": {
+                "enabled": true,
+                "server_name": "{{serverName}}",
+                "utls": {
+                    "enabled": true,
+                    "fingerprint": "chrome"
+                },
+                "reality": {
+                    "enabled": true,
+                    "public_key": "{{publicKey}}",
+                    "short_id": "{{shortId}}"
+                }
+            }
+        }
+    ],
+    "route": {
+        "auto_detect_interface": true,
+        "final": "direct",
+        "default_domain_resolver": "remote-doh-1",
+        "rules": [
+            {
+                "port": 53,
+                "action": "hijack-dns"
+            },
+            {
+                "rule_set": [
+                    "geosite-private"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "rule_set": [
+                    "category-ads-all"
+                ],
+                "action": "reject"
+            },
+            {
+                "rule_set": [
+                    "geosite-ru-available-only-inside"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "rule_set": [
+                    "geoip-ru"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "domain_suffix": [
+                    "ru",
+                    "su",
+                    "xn--p1ai",
+                    "moscow",
+                    "xn--80adxhks",
+                    "xn--p1acf"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "rule_set": [
+                    "geosite-ru-blocked"
+                ],
+                "outbound": "proxy"
+            },
+            {
+                "rule_set": [
+                    "geoip-ru-blocked",
+                    "geoip-ru-blocked-community",
+                    "geoip-re-filter"
+                ],
+                "outbound": "proxy"
+            }
+        ],
+        "rule_set": [
+            {
+                "tag": "geosite-private",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-private.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "category-ads-all",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geosite-ru-available-only-inside",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geosite-ru-blocked",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-ru",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-ru-blocked",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-ru-blocked-community",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-re-filter",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
+                "download_detour": "proxy"
+            }
+        ]
+    }
+}

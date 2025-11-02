@@ -27,6 +27,7 @@
     ./openrgb
     ./mounts.nix
     ./vaultwarden.nix
+    ./random.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
