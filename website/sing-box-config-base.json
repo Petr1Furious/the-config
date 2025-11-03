@@ -27,10 +27,25 @@
         "rules": [
             {
                 "rule_set": [
-                    "category-ads-all"
+                    "geosite-category-ads-all",
+                    "geosite-adguard-list"
                 ],
                 "action": "predefined",
                 "rcode": "NXDOMAIN"
+            },
+            {
+                "rule_set": [
+                    "geosite-phishing",
+                    "geosite-malware"
+                ],
+                "action": "predefined",
+                "rcode": "NXDOMAIN"
+            },
+            {
+                "rule_set": [
+                    "geosite-private"
+                ],
+                "server": "local-dns"
             },
             {
                 "rule_set": [
@@ -45,7 +60,6 @@
     "inbounds": [
         {
             "type": "socks",
-            "tag": "socks-in",
             "listen": "127.0.0.1",
             "listen_port": 10808,
             "sniff": true,
@@ -53,18 +67,15 @@
         },
         {
             "type": "http",
-            "tag": "http-in",
             "listen": "127.0.0.1",
             "listen_port": 10809,
             "sniff": true
         },
         {
             "type": "tun",
-            "tag": "tun-in",
             "address": "172.16.0.1/30",
-            "mtu": 1400,
             "auto_route": true,
-            "strict_route": false,
+            "strict_route": true,
             "sniff": true
         }
     ],
@@ -112,7 +123,22 @@
             },
             {
                 "rule_set": [
-                    "category-ads-all"
+                    "geosite-category-ads-all",
+                    "geosite-adguard-list"
+                ],
+                "action": "reject"
+            },
+            {
+                "rule_set": [
+                    "geosite-phishing",
+                    "geosite-malware"
+                ],
+                "action": "reject"
+            },
+            {
+                "rule_set": [
+                    "geoip-phishing",
+                    "geoip-malware"
                 ],
                 "action": "reject"
             },
@@ -163,7 +189,7 @@
                 "download_detour": "proxy"
             },
             {
-                "tag": "category-ads-all",
+                "tag": "geosite-category-ads-all",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
@@ -210,7 +236,49 @@
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
                 "download_detour": "proxy"
+            },
+            {
+                "tag": "geosite-phishing",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/phishing.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-phishing",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/phishing.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geosite-malware",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/malware.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geoip-malware",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/malware.srs",
+                "download_detour": "proxy"
+            },
+            {
+                "tag": "geosite-adguard-list",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://github.com/xmdhs/sing-box-ruleset/raw/refs/heads/rule-set/AdGuardSDNSFilterSingBox.srs",
+                "download_detour": "proxy"
             }
         ]
+    },
+    "experimental": {
+        "cache_file": {
+            "enabled": true,
+            "store_fakeip": false,
+            "store_rdrc": true
+        }
     }
 }
