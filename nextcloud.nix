@@ -18,6 +18,7 @@ in
     maxUploadSize = "16G";
     database.createLocally = true;
     configureRedis = true;
+    https = true;
 
     extraApps = {
       inherit (config.services.nextcloud.package.packages.apps)
@@ -34,12 +35,17 @@ in
       dbtype = "pgsql";
     };
 
+    phpOptions = {
+      "opcache.interned_strings_buffer" = 32;
+    };
+
     settings = {
       trusted_proxies = [
         "127.0.0.1"
         "::1"
       ];
-      settings.overwriteProtocol = "https";
+      overwriteprotocol = "https";
+      maintenance_window_start = 3;
       enabledPreviewProviders = [
         "OC\\Preview\\BMP"
         "OC\\Preview\\GIF"
@@ -75,4 +81,8 @@ in
     owner = "nextcloud";
     group = "nextcloud";
   };
+
+  services.nginx.virtualHosts.${hostName}.extraConfig = ''
+    add_header X-XSS-Protection "1; mode=block" always;
+  '';
 }
