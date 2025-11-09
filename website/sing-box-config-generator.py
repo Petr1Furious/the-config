@@ -139,23 +139,6 @@ def set_route_final(config, primary: str | None):
         route["final"] = primary
 
 
-def set_dns_final(config, primary: str | None):
-    dns = config.get("dns")
-    if not isinstance(dns, dict):
-        return
-
-    final_map = {
-        "proxy": "remote-doh-1",
-        "direct": "local-dns",
-    }
-
-    target = final_map.get(primary)
-    if not target:
-        return
-
-    dns["final"] = target
-
-
 def set_inbounds(config, mode: str):
     inbounds = config.get("inbounds")
     if not isinstance(inbounds, list):
@@ -204,7 +187,6 @@ class Handler(BaseHTTPRequestHandler):
             return
         reorder_outbounds(cfg, primary)
         set_route_final(cfg, primary)
-        set_dns_final(cfg, primary)
 
         inbound_raw = first(params, "inbound", "tun")
         inbound_mode = (inbound_raw or "tun").strip().lower()

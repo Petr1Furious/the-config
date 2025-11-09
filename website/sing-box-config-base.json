@@ -20,8 +20,7 @@
             },
             {
                 "tag": "local-dns",
-                "type": "local",
-                "detour": "direct"
+                "type": "local"
             }
         ],
         "rules": [
@@ -113,6 +112,11 @@
         "rules": [
             {
                 "port": 53,
+                "action": "hijack-dns"
+            },
+            {
+                "network": "tcp",
+                "port": 853,
                 "action": "hijack-dns"
             },
             {
