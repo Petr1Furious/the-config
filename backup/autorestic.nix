@@ -410,6 +410,7 @@ in
       systemd.timers.autorestic-cron = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
+          OnBootSec = "1min";
           OnUnitInactiveSec = "1min";
           Persistent = true;
           AccuracySec = "30s";
