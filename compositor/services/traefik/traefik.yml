@@ -24,6 +24,9 @@ entryPoints:
         - main: hseminecraft.ru
           sans:
           - '*.hseminecraft.ru'
+        - main: mcitmo.ru
+          sans:
+          - '*.mcitmo.ru'
 
 certificatesResolvers:
   default:
