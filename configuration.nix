@@ -118,4 +118,6 @@
     "mbedtls-2.28.10"
     "jitsi-meet-1.0.8043"
   ];
+
+  programs.nix-ld.enable = true;
 }
