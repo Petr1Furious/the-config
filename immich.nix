@@ -13,7 +13,10 @@ in
   services.immich = {
     enable = true;
     mediaLocation = "/srv/immich";
-    settings.server.externalDomain = "https://${hostName}";
+    settings = {
+      server.externalDomain = "https://${hostName}";
+      machineLearning.ocr.modelName = "ESLAV__PP-OCRv5_mobile";
+    };
     package = pkgs-unstable.immich;
   };
 
