@@ -81,8 +81,12 @@ in
       target = "http://localhost:3876";
     }
     {
-      host = "map.mipt.petr1furious.me";
+      host = "map.mcitmo.ru";
       target = "http://localhost:8101";
+    }
+    {
+      host = "upload.mcitmo.ru";
+      target = "http://localhost:8517";
     }
   ];
 
