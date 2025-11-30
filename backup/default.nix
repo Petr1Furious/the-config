@@ -13,7 +13,10 @@
   backup.rcloneConfigPath = config.age.secrets.rclone-config.path;
   backup.passwordFilePath = config.age.secrets.restic-key.path;
 
-  backup.defaultTo = [ "yandex" ];
+  backup.defaultTo = [
+    "local"
+    "yandex"
+  ];
 
   backup.global.options.all = {
     "retry-lock" = "5m";
@@ -27,6 +30,14 @@
     yandex-minecraft = {
       type = "rclone";
       path = "yandex:/minecraft-backups";
+    };
+    local = {
+      type = "local";
+      path = "/mnt/data/backups";
+    };
+    local-minecraft = {
+      type = "local";
+      path = "/mnt/data/minecraft-backups";
     };
   };
 

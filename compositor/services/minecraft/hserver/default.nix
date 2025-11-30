@@ -58,7 +58,10 @@ in
     in
     {
       from = [ "/srv/minecraft/hserver" ];
-      to = [ "yandex-minecraft" ];
+      to = [
+        "local-minecraft"
+        "yandex-minecraft"
+      ];
       hooks = {
         prevalidate = [
           ''

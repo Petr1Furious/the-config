@@ -354,6 +354,39 @@ in
           fi
         fi
       '';
+
+      localBackendNames = lib.attrNames (
+        lib.filterAttrs (_: backend: backend.type == "local") cfg.backends
+      );
+      localBackendPaths = map (name: cfg.backends.${name}.path) localBackendNames;
+      ensureLocalBackendDirs = lib.concatStringsSep "\n" (
+        lib.flatten (
+          map (
+            name:
+            let
+              backendPath = cfg.backends.${name}.path;
+              parentDir = builtins.dirOf backendPath;
+            in
+            [
+              ''install -d -m 750 "${parentDir}"''
+              ''install -d -m 700 "${backendPath}"''
+            ]
+          ) localBackendNames
+        )
+      );
+      initLocalRepositories = lib.concatStringsSep "\n" (
+        map (
+          name:
+          let
+            backendPath = cfg.backends.${name}.path;
+          in
+          ''
+            if [ ! -f "${backendPath}/config" ]; then
+              restic init --repo "${backendPath}"
+            fi
+          ''
+        ) localBackendNames
+      );
     in
     {
       assertions = [
@@ -380,6 +413,35 @@ in
       ++ lib.optionals (cfg.cacheDir != null) [
         "d ${cfg.cacheDir} 0700 root root -"
       ];
+
+      systemd.services.autorestic-bootstrap = {
+        description = "Autorestic repository bootstrap";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "systemd-tmpfiles-setup.service"
+          "network-online.target"
+        ];
+        wants = [ "network-online.target" ];
+        unitConfig = lib.optionalAttrs (localBackendPaths != [ ]) {
+          RequiresMountsFor = localBackendPaths;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        path = [
+          pkgs.restic
+          pkgs.rclone
+          pkgs.coreutils
+          pkgs.bash
+        ];
+        environment = env;
+        script = ''
+          set -euo pipefail
+          ${lib.optionalString (ensureLocalBackendDirs != "") (ensureLocalBackendDirs + "\n")}
+          ${lib.optionalString (initLocalRepositories != "") (initLocalRepositories + "\n")}
+        '';
+      };
 
       systemd.services.autorestic-cron = {
         description = "Autorestic cron runner";

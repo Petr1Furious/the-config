@@ -12,7 +12,10 @@ let
   export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
 
   make-minecraft-backups = container_names: {
-    to = [ "yandex-minecraft" ];
+    to = [
+      "local-minecraft"
+      "yandex-minecraft"
+    ];
     hooks = {
       prevalidate = [
         (
