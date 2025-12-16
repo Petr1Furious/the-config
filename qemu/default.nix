@@ -38,15 +38,6 @@ in
   virtualisation.libvirtd = {
     enable = true;
     qemu = {
-      ovmf = {
-        enable = true;
-        packages = [
-          (pkgs.OVMFFull.override {
-            secureBoot = true;
-            tpmSupport = true;
-          }).fd
-        ];
-      };
       vhostUserPackages = with pkgs; [ virtiofsd ];
     };
   };

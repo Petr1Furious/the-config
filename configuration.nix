@@ -65,22 +65,6 @@
     wget
     htop
     git
-    nixfmt-rfc-style
-    tealdeer
-    peco
-    gcc
-    manix
-    whois
-    bmon
-    restic
-    iotop
-    pciutils
-    ncdu
-    zip
-    unzip
-    nodejs_24
-    pkgs-unstable.sing-box
-    pkgs-unstable.rustup
   ];
 
   programs.zsh = {
@@ -116,7 +100,7 @@
 
   nixpkgs.config.permittedInsecurePackages = [
     "mbedtls-2.28.10"
-    "jitsi-meet-1.0.8043"
+    "jitsi-meet-1.0.8792"
   ];
 
   programs.nix-ld.enable = true;

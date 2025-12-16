@@ -17,7 +17,7 @@
 
   programs.zsh = {
     enable = true;
-    dotDir = ".config/zsh";
+    dotDir = "${config.home.homeDirectory}/.config/zsh";
 
     syntaxHighlighting.enable = true;
     autosuggestion.enable = true;
@@ -57,10 +57,29 @@
     };
   };
 
+  home.packages = with pkgs; [
+    nixfmt-rfc-style
+    tealdeer
+    gcc
+    manix
+    whois
+    peco
+    bmon
+    restic
+    iotop
+    pciutils
+    ncdu
+    zip
+    unzip
+    nodejs_24
+  ];
+
   programs.git = {
     enable = true;
-    userName = "Petr Tsopa";
-    userEmail = "petrtsopa03@gmail.com";
+    settings.user = {
+      name = "Petr Tsopa";
+      email = "petrtsopa03@gmail.com";
+    };
   };
 
   programs.vim = {
