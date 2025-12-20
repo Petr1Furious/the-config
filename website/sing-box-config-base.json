@@ -84,12 +84,11 @@
             "tag": "direct"
         },
         {
-            "type": "vless",
+            "type": "anytls",
             "tag": "proxy",
             "server": "{{address}}",
             "server_port": 443,
-            "uuid": "{{uuid}}",
-            "flow": "xtls-rprx-vision",
+            "password": "{{password}}",
             "tls": {
                 "enabled": true,
                 "server_name": "{{serverName}}",
