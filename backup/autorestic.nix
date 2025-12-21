@@ -306,6 +306,29 @@ in
 
       autoresticFile = yamlFmt.generate "autorestic.yml" autoresticYaml;
 
+      autoresticDir = builtins.dirOf cfg.autoresticYamlPath;
+
+      rcloneConfigRuntimePath =
+        if cfg.rcloneConfigPath == null then
+          null
+        else
+          "${autoresticDir}/${builtins.baseNameOf (toString cfg.rcloneConfigPath)}";
+
+      ensureRcloneConfig =
+        if cfg.rcloneConfigPath == null then
+          null
+        else
+          pkgs.writeShellScript "autorestic-ensure-rclone-config" ''
+            set -euo pipefail
+
+            SRC="${toString cfg.rcloneConfigPath}"
+            DST="${toString rcloneConfigRuntimePath}"
+
+            if [ ! -f "$DST" ]; then
+              install -m 0600 -o root -g root "$SRC" "$DST"
+            fi
+          '';
+
       perBackendEnv = foldl' (
         acc: name:
         let
@@ -316,21 +339,20 @@ in
         // lib.optionalAttrs (cfg.passwordFilePath != null) {
           "AUTORESTIC_${N}_RESTIC_PASSWORD_FILE" = cfg.passwordFilePath;
         }
-        // lib.optionalAttrs (backend.type == "rclone" && cfg.rcloneConfigPath != null) {
-          "AUTORESTIC_${N}_RCLONE_CONFIG" = cfg.rcloneConfigPath;
+        // lib.optionalAttrs (backend.type == "rclone" && rcloneConfigRuntimePath != null) {
+          "AUTORESTIC_${N}_RCLONE_CONFIG" = rcloneConfigRuntimePath;
         }
       ) { } (lib.attrNames cfg.backends);
 
       env =
         { }
         // lib.optionalAttrs (cfg.passwordFilePath != null) { RESTIC_PASSWORD_FILE = cfg.passwordFilePath; }
-        // lib.optionalAttrs (cfg.rcloneConfigPath != null) { RCLONE_CONFIG = cfg.rcloneConfigPath; }
+        // lib.optionalAttrs (rcloneConfigRuntimePath != null) { RCLONE_CONFIG = rcloneConfigRuntimePath; }
         // lib.optionalAttrs (cfg.cacheDir != null) {
           RESTIC_CACHE_DIR = cfg.cacheDir;
         }
         // perBackendEnv;
 
-      autoresticDir = builtins.dirOf cfg.autoresticYamlPath;
       autoresticLocalLock = "${autoresticDir}/.autorestic.lock.yml";
 
       cleanLocalLock = pkgs.writeShellScript "autorestic-clean-local-lock" ''
@@ -438,6 +460,7 @@ in
         environment = env;
         script = ''
           set -euo pipefail
+          ${lib.optionalString (ensureRcloneConfig != null) "${ensureRcloneConfig}\n"}
           ${lib.optionalString (ensureLocalBackendDirs != "") (ensureLocalBackendDirs + "\n")}
           ${lib.optionalString (initLocalRepositories != "") (initLocalRepositories + "\n")}
         '';
@@ -452,7 +475,10 @@ in
         wants = [ "network-online.target" ];
         serviceConfig = {
           Type = "oneshot";
-          ExecStartPre = "${cleanLocalLock}";
+          ExecStartPre = [
+            "${cleanLocalLock}"
+          ]
+          ++ lib.optionals (ensureRcloneConfig != null) [ "${ensureRcloneConfig}" ];
         };
         path = [
           pkgs.autorestic
@@ -491,7 +517,10 @@ in
           Type = "oneshot";
           Nice = 10;
           IOSchedulingClass = "idle";
-          ExecStartPre = "${cleanLocalLock}";
+          ExecStartPre = [
+            "${cleanLocalLock}"
+          ]
+          ++ lib.optionals (ensureRcloneConfig != null) [ "${ensureRcloneConfig}" ];
         };
         path = [
           pkgs.autorestic
