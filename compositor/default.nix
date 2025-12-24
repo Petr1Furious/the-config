@@ -8,7 +8,6 @@
 {
   imports = [
     ./services/traefik
-    ./services/minecraft/hserver
     ./services/tgauth
     ./services/overleaf
     ./services/pterodactyl
