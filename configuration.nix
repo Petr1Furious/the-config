@@ -11,7 +11,6 @@
     ./hardware-configuration.nix
     ./backup
     ./compositor
-    ./potato-launcher
     ./postgres.nix
     ./backup-home.nix
     ./jitsi.nix

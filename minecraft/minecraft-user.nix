@@ -44,6 +44,21 @@ let
       ];
     };
   };
+  make-launcher-backups =
+    launcher-names:
+    builtins.listToAttrs (
+      map (launcher-name: {
+        name = launcher-name;
+        value = {
+          from = [
+            "/home/minecraft/srv/${launcher-name}"
+          ];
+          options.backup.exclude = [
+            "/home/minecraft/srv/${launcher-name}/state/workdir"
+          ];
+        };
+      }) launcher-names
+    );
 in
 {
   users.users.minecraft = {
@@ -59,20 +74,25 @@ in
 
   virtualisation.docker.rootless.enable = true;
 
-  backup.locations.modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
-    from = [ "/home/minecraft/modded-hserver" ];
-    cron = "30 * * * *";
-  };
-
-  backup.locations.minigames =
-    make-minecraft-backups [
-      "minigames-main"
-      "minigames-bedwars"
-    ]
-    // {
-      from = [ "/home/minecraft/minigames" ];
-      cron = "0 8 * * *";
+  backup.locations = {
+    modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
+      from = [ "/home/minecraft/modded-hserver" ];
+      cron = "30 * * * *";
     };
+    minigames =
+      make-minecraft-backups [
+        "minigames-main"
+        "minigames-bedwars"
+      ]
+      // {
+        from = [ "/home/minecraft/minigames" ];
+        cron = "0 8 * * *";
+      };
+  }
+  // make-launcher-backups [
+    "potato-launcher"
+    "hse-launcher"
+  ];
 
   traefik.proxies = [
     {
@@ -90,6 +110,18 @@ in
     {
       host = "upload.mcitmo.ru";
       target = "http://localhost:8517";
+    }
+    {
+      host = "mc.petr1furious.me";
+      target = "http://127.0.0.1:8001";
+    }
+    {
+      host = "hseminecraft.ru";
+      target = "http://127.0.0.1:8002";
+    }
+    {
+      host = "mcitmo.ru";
+      target = "http://127.0.0.1:8003";
     }
   ];
 
