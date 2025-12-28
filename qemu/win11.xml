@@ -29,6 +29,16 @@
       <vapic state='on'/>
       <spinlocks state='on' retries='8191'/>
       <vendor_id state='on' value='1234567890ab'/>
+      <vpindex state='on'/>
+      <synic state='on'/>
+      <stimer state='on'>
+        <direct state='on'/>
+      </stimer>
+      <reset state='on'/>
+      <frequencies state='on'/>
+      <reenlightenment state='on'/>
+      <tlbflush state='on'/>
+      <ipi state='on'/>
     </hyperv>
     <kvm>
       <hidden state='on'/>
@@ -37,13 +47,14 @@
     <smm state='on'/>
     <ioapic driver='kvm'/>
   </features>
-  <cpu mode='host-passthrough' check='none' migratable='on'>
+  <cpu mode='host-passthrough' check='none' migratable='off'>
     <topology sockets='1' dies='1' clusters='1' cores='6' threads='2'/>
   </cpu>
   <clock offset='localtime'>
-    <timer name='rtc' tickpolicy='catchup'/>
-    <timer name='pit' tickpolicy='delay'/>
+    <timer name='rtc' present='no' tickpolicy='catchup'/>
+    <timer name='pit' present='no' tickpolicy='delay'/>
     <timer name='hpet' present='no'/>
+    <timer name='kvmclock' present='no'/>
     <timer name='hypervclock' present='yes'/>
   </clock>
   <on_poweroff>destroy</on_poweroff>
@@ -56,10 +67,9 @@
   <devices>
     <emulator>/run/current-system/sw/bin/qemu-system-x86_64</emulator>
     <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2' discard='unmap'/>
+      <driver name='qemu' type='qcow2' cache='none' io='native' discard='unmap'/>
       <source file='/var/lib/libvirt/images/win11.qcow2'/>
-      <target dev='sda' bus='sata'/>
-      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+      <target dev='vda' bus='virtio'/>
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
@@ -170,8 +180,8 @@
     </input>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
-    <graphics type='spice' port='-1' autoport='no'>
-      <listen type='address'/>
+    <graphics type='spice' autoport='yes'>
+      <listen type='address' address='127.0.0.1'/>
       <image compression='off'/>
       <gl enable='no'/>
     </graphics>
@@ -180,7 +190,7 @@
     </sound>
     <audio id='1' type='spice'/>
     <video>
-      <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1' primary='yes'/>
+      <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1' primary='no'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0'/>
     </video>
     <hostdev mode='subsystem' type='pci' managed='yes'>
@@ -208,8 +218,6 @@
       <address type='usb' bus='0' port='3'/>
     </redirdev>
     <watchdog model='itco' action='reset'/>
-    <memballoon model='virtio'>
-      <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0'/>
-    </memballoon>
+    <memballoon model='none'/>
   </devices>
 </domain>
