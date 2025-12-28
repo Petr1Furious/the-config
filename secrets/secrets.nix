@@ -25,6 +25,7 @@ let
     "xray-proxy.age"
     "pterodactyl-panel-env.age"
     "pterodactyl-db-env.age"
+    "cleanup-script.age"
   ];
 in
 builtins.listToAttrs (
