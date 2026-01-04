@@ -92,6 +92,7 @@ in
   // make-launcher-backups [
     "potato-launcher"
     "hse-launcher"
+    "itmo-launcher"
   ];
 
   traefik.proxies = [
