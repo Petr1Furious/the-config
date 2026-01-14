@@ -88,6 +88,10 @@ in
         from = [ "/home/minecraft/minigames" ];
         cron = "0 8 * * *";
       };
+    potato-smp = make-minecraft-backups [ "potato-smp" ] // {
+      from = [ "/home/minecraft/potato-smp" ];
+      cron = "0 * * * *";
+    };
   }
   // make-launcher-backups [
     "potato-launcher"
@@ -105,11 +109,11 @@ in
       target = "http://localhost:3876";
     }
     {
-      host = "map.mcitmo.ru";
+      host = "map.hseminecraft.ru";
       target = "http://localhost:8101";
     }
     {
-      host = "upload.mcitmo.ru";
+      host = "upload.hseminecraft.ru";
       target = "http://localhost:8517";
     }
     {
