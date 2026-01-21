@@ -72,7 +72,15 @@ in
     uid = 1002;
   };
 
-  virtualisation.docker.rootless.enable = true;
+  virtualisation.docker.rootless = {
+    enable = true;
+    extraPackages = [ pkgs.passt ];
+    daemon.settings.dns = ["1.1.1.1"];
+  };
+  systemd.user.services.docker.environment = {
+    DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";
+    DOCKERD_ROOTLESS_ROOTLESSKIT_PORT_DRIVER = "implicit";
+  };
 
   backup.locations = {
     modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {

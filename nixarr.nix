@@ -44,7 +44,7 @@ in
     radarr.environment = proxyEnv;
     sonarr.environment = proxyEnv;
     prowlarr.environment = proxyEnv;
-    transmission.environment = proxyEnv;
+    # transmission.environment = proxyEnv;
   };
 
   backup.locations.nixarr = {

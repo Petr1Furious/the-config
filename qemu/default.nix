@@ -4,42 +4,46 @@
   pkgs,
   ...
 }:
-
-let
-  devices = [
-    "10de:2783"
-    "10de:22bc"
-  ];
-in
 {
   boot = {
-    kernelParams = [
-      "vfio-pci.ids=${lib.concatStringsSep "," devices}"
-    ];
-    initrd.kernelModules = [
+    kernelModules = [
+      "nvidia"
+      "nvidia_uvm"
+
       "vfio_pci"
       "vfio"
       "vfio_iommu_type1"
     ];
-    extraModprobeConfig = ''
-      softdep nvidia pre: vfio-pci
-      softdep drm pre: vfio-pci
-      softdep nouveau pre: vfio-pci
-    '';
     blacklistedKernelModules = [
       "nouveau"
-      "nvidia"
+      # prevent display stack from coming up on the host
       "nvidia_drm"
       "nvidia_modeset"
-      "i2c_nvidia_gpu"
+      "nvidiafb"
     ];
   };
+
+  hardware.nvidia = {
+    modesetting.enable = false;
+    nvidiaPersistenced = false;
+    open = false;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  };
+
+  environment.systemPackages = [
+    config.hardware.nvidia.package
+  ];
+
+  services.xserver.videoDrivers = [ "nvidia" ];
 
   virtualisation.libvirtd = {
     enable = true;
     qemu = {
       vhostUserPackages = with pkgs; [ virtiofsd ];
     };
+    hooks.qemu."gpu-switch" = pkgs.runCommand "gpu-switch-hook" { } ''
+      install -Dm755 ${./scripts/gpu-switch.sh} $out
+    '';
   };
   virtualisation.spiceUSBRedirection.enable = true;
 
@@ -72,24 +76,5 @@ in
     };
     restartIfChanged = true;
     wantedBy = [ "multi-user.target" ];
-  };
-
-  systemd.services.vfio-gpu-reset = {
-    description = "Reset GPU using minimal QEMU";
-    after = [ "systemd-modules-load.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = pkgs.writeShellScript "reset-gpu-qemu" ''
-        echo "quit" | timeout 10s ${pkgs.qemu}/bin/qemu-system-x86_64 \
-          -machine q35 \
-          -device vfio-pci,host=01:00.0 \
-          -device vfio-pci,host=01:00.1 \
-          -nographic \
-          -serial none \
-          -monitor stdio <<< "quit" || true
-      '';
-      RemainAfterExit = true;
-    };
   };
 }
