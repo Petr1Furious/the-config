@@ -7,34 +7,11 @@
 {
   boot = {
     kernelModules = [
-      "nvidia"
-      "nvidia_uvm"
-
       "vfio_pci"
       "vfio"
       "vfio_iommu_type1"
     ];
-    blacklistedKernelModules = [
-      "nouveau"
-      # prevent display stack from coming up on the host
-      "nvidia_drm"
-      "nvidia_modeset"
-      "nvidiafb"
-    ];
   };
-
-  hardware.nvidia = {
-    modesetting.enable = false;
-    nvidiaPersistenced = false;
-    open = false;
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-  };
-
-  environment.systemPackages = [
-    config.hardware.nvidia.package
-  ];
-
-  services.xserver.videoDrivers = [ "nvidia" ];
 
   virtualisation.libvirtd = {
     enable = true;

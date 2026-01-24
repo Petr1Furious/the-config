@@ -56,6 +56,31 @@
     shell = pkgs.zsh;
   };
 
+  boot = {
+    kernelModules = [
+      "nvidia"
+      "nvidia_uvm"
+    ];
+    blacklistedKernelModules = [
+      "nouveau"
+      # prevent display stack from coming up on the host
+      "nvidia_drm"
+      "nvidia_modeset"
+      "nvidiafb"
+    ];
+  };
+
+  hardware.nvidia = {
+    modesetting.enable = false;
+    nvidiaPersistenced = false;
+    open = false;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  };
+
+  hardware.nvidia-container-toolkit.enable = true;
+
+  services.xserver.videoDrivers = [ "nvidia" ];
+
   security.sudo.wheelNeedsPassword = false;
 
   nixpkgs.config.allowUnfree = true;
@@ -64,6 +89,7 @@
     wget
     htop
     git
+    config.hardware.nvidia.package
   ];
 
   programs.zsh = {
