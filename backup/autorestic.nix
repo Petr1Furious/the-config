@@ -450,6 +450,13 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          Nice = 19;
+          CPUSchedulingPolicy = "idle";
+          CPUWeight = 1;
+          IOWeight = 1;
+          IOSchedulingClass = "idle";
+          IOPriority = 7;
+          OOMScoreAdjust = 500;
         };
         path = [
           pkgs.restic
@@ -475,6 +482,13 @@ in
         wants = [ "network-online.target" ];
         serviceConfig = {
           Type = "oneshot";
+          Nice = 19;
+          CPUSchedulingPolicy = "idle";
+          CPUWeight = 1;
+          IOWeight = 1;
+          IOSchedulingClass = "idle";
+          IOPriority = 7;
+          OOMScoreAdjust = 500;
           ExecStartPre = [
             "${cleanLocalLock}"
           ]
@@ -515,8 +529,13 @@ in
         wants = [ "network-online.target" ];
         serviceConfig = {
           Type = "oneshot";
-          Nice = 10;
+          Nice = 19;
+          CPUSchedulingPolicy = "idle";
+          CPUWeight = 1;
+          IOWeight = 1;
           IOSchedulingClass = "idle";
+          IOPriority = 7;
+          OOMScoreAdjust = 500;
           ExecStartPre = [
             "${cleanLocalLock}"
           ]
