@@ -21,10 +21,16 @@ in
       SHOW_WATERMARK_FOR_GUESTS = false;
     };
   };
-  services.jitsi-videobridge.openFirewall = true;
+  services.jitsi-videobridge = {
+    openFirewall = true;
+    nat = {
+      localAddress = "192.168.1.2";
+      publicAddress = "188.32.4.54";
+    };
+  };
 
   nixpkgs.config.permittedInsecurePackages = [
-    "jitsi-meet-1.0.8043"
+    "jitsi-meet-1.0.8792"
   ];
 
   services.nginx.virtualHosts.${hostName} = {
