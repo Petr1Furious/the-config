@@ -13,6 +13,28 @@
     <access mode='shared' />
   </memoryBacking>
   <vcpu placement='static'>12</vcpu>
+  <cputune>
+    <vcpupin vcpu='0' cpuset='2' />
+    <vcpupin vcpu='1' cpuset='18' />
+
+    <vcpupin vcpu='2' cpuset='3' />
+    <vcpupin vcpu='3' cpuset='19' />
+
+    <vcpupin vcpu='4' cpuset='4' />
+    <vcpupin vcpu='5' cpuset='20' />
+
+    <vcpupin vcpu='6' cpuset='5' />
+    <vcpupin vcpu='7' cpuset='21' />
+
+    <vcpupin vcpu='8' cpuset='6' />
+    <vcpupin vcpu='9' cpuset='22' />
+
+    <vcpupin vcpu='10' cpuset='7' />
+    <vcpupin vcpu='11' cpuset='23' />
+
+    <emulatorpin cpuset='0-1,8-15,24-31' />
+    <iothreadpin iothread='1' cpuset='0-1' />
+  </cputune>
   <iothreads>1</iothreads>
   <os firmware='efi'>
     <type arch='x86_64' machine='pc-q35-9.1'>hvm</type>
@@ -56,7 +78,6 @@
     <timer name='rtc' tickpolicy='catchup' />
     <timer name='pit' tickpolicy='delay' />
     <timer name='hpet' present='no' />
-    <timer name='kvmclock' present='no' />
     <timer name='hypervclock' present='yes' />
   </clock>
   <on_poweroff>destroy</on_poweroff>
@@ -122,11 +143,13 @@
     <controller type='virtio-serial' index='0'>
       <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0' />
     </controller>
+    <controller type='usb' index='0' model='qemu-xhci' ports='15'>
+      <address type='pci' domain='0x0000' bus='0x02' slot='0x00' function='0x0' />
+    </controller>
     <interface type='network'>
       <mac address='52:54:00:5d:00:e4' />
       <source network='default' />
       <model type='virtio' />
-      <driver name='vhost' queues='4' />
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0' />
     </interface>
     <serial type='pty'>
@@ -137,9 +160,6 @@
     <console type='pty'>
       <target type='serial' port='0' />
     </console>
-    <input type='tablet' bus='usb'>
-      <address type='usb' bus='0' port='1' />
-    </input>
     <input type='mouse' bus='ps2' />
     <input type='keyboard' bus='ps2' />
     <hostdev mode='subsystem' type='pci' managed='yes'>
