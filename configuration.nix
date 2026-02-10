@@ -123,10 +123,5 @@
 
   system.stateVersion = "24.11"; # Do not touch this value unless you know what you are doing.
 
-  nixpkgs.config.permittedInsecurePackages = [
-    "mbedtls-2.28.10"
-    "jitsi-meet-1.0.8792"
-  ];
-
   programs.nix-ld.enable = true;
 }
