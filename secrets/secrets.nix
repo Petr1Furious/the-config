@@ -26,6 +26,7 @@ let
     "pterodactyl-panel-env.age"
     "pterodactyl-db-env.age"
     "cleanup-script.age"
+    "clipcascade-db-password.age"
   ];
 in
 builtins.listToAttrs (
