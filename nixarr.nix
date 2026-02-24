@@ -53,7 +53,7 @@ in
     ];
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = "jellyfin.petr1furious.me";
       target = "http://127.0.0.1:8096";

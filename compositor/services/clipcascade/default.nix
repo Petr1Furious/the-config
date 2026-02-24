@@ -67,7 +67,7 @@ in
     requires = [ "clipcascade-postgres-password.service" ];
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = hostName;
       target = "http://127.0.0.1:8180";

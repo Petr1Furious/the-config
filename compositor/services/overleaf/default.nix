@@ -24,6 +24,11 @@
           };
         };
         stop_grace_period = "60s";
+        labels = [
+          "caddy=overleaf.petr1furious.me"
+          "caddy.reverse_proxy={{upstreams 80}}"
+          "caddy_ingress_network=overleaf_default"
+        ];
         volumes = [
           "/srv/overleaf:/var/lib/overleaf"
         ];
@@ -38,10 +43,6 @@
           OVERLEAF_SITE_URL = "http://overleaf.petr1furious.me";
           OVERLEAF_NAV_TITLE = "Overleaf Community Edition";
         };
-        labels = [
-          "traefik.enable=true"
-          "traefik.http.routers.overleaf.rule=Host(`overleaf.petr1furious.me`)"
-        ];
       };
 
       mongo = {

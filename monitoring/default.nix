@@ -72,7 +72,7 @@ in
     ];
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = domain;
       target = "http://localhost:${toString grafanaPort}";

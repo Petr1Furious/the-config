@@ -20,7 +20,7 @@ in
     package = pkgs-unstable.immich;
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = hostName;
       target = "http://localhost:${toString config.services.immich.port}";

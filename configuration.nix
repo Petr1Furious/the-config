@@ -27,6 +27,7 @@
     ./mounts.nix
     ./vaultwarden.nix
     ./random.nix
+    ./caddy.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

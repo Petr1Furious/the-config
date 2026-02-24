@@ -17,8 +17,9 @@
         extra_hosts = [ "host.docker.internal:host-gateway" ];
         image = "registry.vanutp.dev/minecraft/tgauth-backend:latest";
         labels = [
-          "traefik.enable=true"
-          "traefik.http.routers.tgauth.rule=Host(`mc-auth.petr1furious.me`)"
+          "caddy=mc-auth.petr1furious.me"
+          "caddy.reverse_proxy={{upstreams 8000}}"
+          "caddy_ingress_network=tgauth_default"
         ];
         restart = "always";
         volumes = [

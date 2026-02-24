@@ -47,8 +47,9 @@ in
         image = "ghcr.io/pterodactyl/panel:v1.11.11";
         container_name = "pterodactyl-panel";
         labels = [
-          "traefik.enable=true"
-          "traefik.http.routers.pterodactyl-panel.rule=Host(`pterodactyl.petr1furious.me`)"
+          "caddy=pterodactyl.petr1furious.me"
+          "caddy.reverse_proxy={{upstreams 80}}"
+          "caddy_ingress_network=pterodactyl_default"
         ];
         env_file = config.age.secrets.pterodactyl-panel-env.path;
         volumes = [
@@ -139,7 +140,7 @@ in
     '';
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = "pterodactyl-wings.petr1furious.me";
       target = "http://localhost:8461";

@@ -107,7 +107,7 @@ in
     "itmo-launcher"
   ];
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = "mmap.hseminecraft.ru";
       target = "http://localhost:8100";

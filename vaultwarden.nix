@@ -22,7 +22,7 @@ in
     environmentFile = config.age.secrets.vaultwarden-admin-token.path;
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = hostName;
       target = "http://127.0.0.1:${toString config.services.vaultwarden.config.ROCKET_PORT}";

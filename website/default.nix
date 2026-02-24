@@ -86,7 +86,7 @@ in
     };
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = "petr1furious.me";
       target = "http://127.0.0.1:${toString config.setup.nginxPort}";

@@ -62,7 +62,7 @@ in
     };
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = hostName;
       target = "http://localhost:${toString config.setup.nginxPort}";

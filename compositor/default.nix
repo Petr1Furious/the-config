@@ -7,7 +7,6 @@
 
 {
   imports = [
-    ./services/traefik
     ./services/clipcascade
     ./services/tgauth
     ./services/overleaf

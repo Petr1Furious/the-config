@@ -38,7 +38,7 @@ in
     forceSSL = false;
   };
 
-  traefik.proxies = [
+  caddy.proxies = [
     {
       host = hostName;
       target = "http://127.0.0.1:${toString config.setup.nginxPort}";

@@ -15,7 +15,6 @@ let
     "vaultwarden-admin-token.age"
     "tgauth-key.age"
     "tgauth-env.age"
-    "traefik-env.age"
     "htpasswd.age"
     "sing-box-proxy-blocked.age"
     "sing-box-proxy-all-except-ru.age"
