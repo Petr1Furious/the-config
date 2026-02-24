@@ -19,6 +19,11 @@
     wantedBy = [ "multi-user.target" ];
   };
 
+  networking.firewall.allowedTCPPorts = [
+    10808
+    10809
+  ];
+
   # systemd.services.xray = {
   #   description = "Xray proxy";
   #   after = [ "network-online.target" ];
