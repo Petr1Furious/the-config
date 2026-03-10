@@ -82,26 +82,6 @@
         {
             "type": "direct",
             "tag": "direct"
-        },
-        {
-            "type": "anytls",
-            "tag": "proxy",
-            "server": "{{address}}",
-            "server_port": 443,
-            "password": "{{password}}",
-            "tls": {
-                "enabled": true,
-                "server_name": "{{serverName}}",
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                },
-                "reality": {
-                    "enabled": true,
-                    "public_key": "{{publicKey}}",
-                    "short_id": "{{shortId}}"
-                }
-            }
         }
     ],
     "route": {

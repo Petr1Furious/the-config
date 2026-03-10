@@ -32,6 +32,184 @@ def deep_clone(obj):
     return json.loads(json.dumps(obj))
 
 
+def parse_json_param(params: dict[str, list[str]], key: str, default):
+    raw = first(params, key, None)
+    if raw is None or raw == "":
+        return deep_clone(default)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Bad JSON in '{key}': {exc.msg}") from exc
+
+
+def as_outbound_list(raw, key: str):
+    if raw is None:
+        return []
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, dict):
+        return [raw]
+    raise ValueError(f"'{key}' must be a JSON object or array")
+
+
+def to_int(value, default: int, field: str):
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except Exception as exc:
+        raise ValueError(f"'{field}' must be an integer") from exc
+
+
+def build_vless_outbound(raw: dict, index: int):
+    if not isinstance(raw, dict):
+        raise ValueError("Each vless outbound must be a JSON object")
+
+    server = str(raw.get("server", "")).strip()
+    if not server:
+        raise ValueError("vless outbound requires 'server'")
+
+    tag = str(raw.get("tag", "")).strip() or f"vless-s{index}"
+    server_name = str(raw.get("server_name", "")).strip() or server
+    uuid = str(raw.get("uuid", "")).strip()
+    if not uuid:
+        raise ValueError(f"vless outbound '{tag}' requires 'uuid'")
+
+    return {
+        "type": "vless",
+        "tag": tag,
+        "server": server,
+        "server_port": to_int(raw.get("server_port"), 443, f"{tag}.server_port"),
+        "uuid": uuid,
+        "flow": str(raw.get("flow", "")).strip(),
+        "tls": {
+            "enabled": True,
+            "server_name": server_name,
+            "utls": {
+                "enabled": True,
+                "fingerprint": str(raw.get("fingerprint", "chrome")).strip() or "chrome",
+            },
+            "reality": {
+                "enabled": True,
+                "public_key": str(raw.get("public_key", "")).strip(),
+                "short_id": str(raw.get("short_id", "")).strip(),
+            },
+        },
+    }
+
+
+def build_hysteria2_outbound(raw: dict, index: int):
+    if not isinstance(raw, dict):
+        raise ValueError("Each hysteria2 outbound must be a JSON object")
+
+    server = str(raw.get("server", "")).strip()
+    if not server:
+        raise ValueError("hysteria2 outbound requires 'server'")
+
+    tag = str(raw.get("tag", "")).strip() or f"hy2-s{index}"
+    server_name = str(raw.get("server_name", "")).strip() or server
+    password = str(raw.get("password", "")).strip()
+    if not password:
+        raise ValueError(f"hysteria2 outbound '{tag}' requires 'password'")
+
+    outbound = {
+        "type": "hysteria2",
+        "tag": tag,
+        "server": server,
+        "server_port": to_int(raw.get("server_port"), 443, f"{tag}.server_port"),
+        "password": password,
+        "obfs": {
+            "type": str(raw.get("obfs_type", "salamander")).strip() or "salamander",
+            "password": str(raw.get("obfs_password", "")).strip(),
+        },
+        "tls": {
+            "enabled": True,
+            "server_name": server_name
+        },
+    }
+
+    if "up_mbps" in raw and raw.get("up_mbps") not in (None, ""):
+        outbound["up_mbps"] = to_int(raw.get("up_mbps"), 0, f"{tag}.up_mbps")
+    if "down_mbps" in raw and raw.get("down_mbps") not in (None, ""):
+        outbound["down_mbps"] = to_int(raw.get("down_mbps"), 0, f"{tag}.down_mbps")
+
+    return outbound
+
+
+def build_urltest(tag: str, outbounds: list[str]):
+    return {
+        "type": "urltest",
+        "tag": tag,
+        "outbounds": outbounds,
+        "url": "https://cp.cloudflare.com/generate_204",
+        "interval": "3m",
+        "tolerance": 50,
+        "interrupt_exist_connections": False,
+    }
+
+
+def build_proxy_outbounds(vless_raw, hy2_raw):
+    vless_specs = as_outbound_list(vless_raw, "vless")
+    hy2_specs = as_outbound_list(hy2_raw, "hy2")
+
+    vless_outbounds = [
+        build_vless_outbound(raw, idx + 1) for idx, raw in enumerate(vless_specs)
+    ]
+    hy2_outbounds = [
+        build_hysteria2_outbound(raw, idx + 1) for idx, raw in enumerate(hy2_specs)
+    ]
+
+    protocol_outbounds = vless_outbounds + hy2_outbounds
+    if not protocol_outbounds:
+        raise ValueError(
+            "No proxy outbounds configured. Provide JSON in query params 'vless' and/or 'hy2'."
+        )
+
+    protocol_tags = [o["tag"] for o in protocol_outbounds]
+    derived_outbounds = []
+    selector_candidates = []
+
+    if len(vless_outbounds) > 1:
+        vless_tags = [o["tag"] for o in vless_outbounds]
+        derived_outbounds.append(build_urltest("vless-auto", vless_tags))
+        selector_candidates.append("vless-auto")
+    if len(hy2_outbounds) > 1:
+        hy2_tags = [o["tag"] for o in hy2_outbounds]
+        derived_outbounds.append(build_urltest("hy2-auto", hy2_tags))
+        selector_candidates.append("hy2-auto")
+
+    selector_candidates.extend(protocol_tags)
+
+    proxy_selector = {
+        "type": "selector",
+        "tag": "proxy",
+        "outbounds": selector_candidates,
+        "default": selector_candidates[0],
+    }
+
+    return protocol_outbounds + derived_outbounds + [proxy_selector]
+
+
+def set_generated_outbounds(config, generated_outbounds):
+    outbounds = config.get("outbounds")
+    if not isinstance(outbounds, list):
+        outbounds = []
+
+    reserved_tags = {"proxy", "vless-auto", "hy2-auto"}
+    reserved_types = {"vless", "hysteria2", "urltest", "selector", "anytls"}
+    base_outbounds = []
+    for outbound in outbounds:
+        if not isinstance(outbound, dict):
+            continue
+        if outbound.get("tag") in reserved_tags:
+            continue
+        if outbound.get("type") in reserved_types:
+            continue
+        base_outbounds.append(outbound)
+
+    config["outbounds"] = base_outbounds + generated_outbounds
+
+
 def build_populator(params):
     addr = first(params, "address", "")
     srv = first(params, "serverName", "")
@@ -179,6 +357,14 @@ class Handler(BaseHTTPRequestHandler):
 
         cfg = deep_clone(self.template)
         cfg = build_populator(params)(cfg)
+        try:
+            vless_raw = parse_json_param(params, "vless", [])
+            hy2_raw = parse_json_param(params, "hy2", [])
+            generated_outbounds = build_proxy_outbounds(vless_raw, hy2_raw)
+            set_generated_outbounds(cfg, generated_outbounds)
+        except ValueError as exc:
+            self.send_error(400, str(exc))
+            return
 
         primary_raw = first(params, "primary", "direct")
         primary = (primary_raw or "direct").strip().lower()

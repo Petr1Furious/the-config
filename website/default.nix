@@ -6,18 +6,20 @@
 }:
 
 let
-  mkSingBoxSecret = file: {
+  mkNginxSecret = file: {
     file = ../secrets/${file}.age;
-    path = "/run/sing-box-configs/${file}.json";
     mode = "440";
     owner = "nginx";
     group = "nginx";
   };
 
   singBoxSecretFiles = [
-    "sing-box-proxy-blocked"
-    "sing-box-proxy-all-except-ru"
-    "sing-box-proxy-all"
+    "htpasswd"
+    "htpasswd-admin"
+    "sing-box-simple-blocked"
+    "sing-box-simple-all"
+    "sing-box-blocked"
+    "sing-box-all"
   ];
 
   xrayGeneratorPort = 18080;
@@ -37,14 +39,6 @@ in
       return = "302 /sing-box/";
     };
 
-    locations."/sing-box/" = {
-      alias = "/run/sing-box-configs/";
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        autoindex on;
-      '';
-    };
-
     locations."/sing-box/generate" = {
       proxyPass = "http://127.0.0.1:${toString singBoxGeneratorPort}";
       extraConfig = ''
@@ -54,24 +48,48 @@ in
       '';
     };
 
-    locations."/xray" = {
-      proxyPass = "http://127.0.0.1:${toString xrayGeneratorPort}";
+    locations."= /sing-box/simple-blocked.json" = {
+      basicAuthFile = config.age.secrets.htpasswd.path;
       extraConfig = ''
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        include ${config.age.secrets.sing-box-simple-blocked.path};
       '';
     };
-  };
 
-  systemd.services.xray-config-generator = {
-    description = "XRAY config templating HTTP server";
-    after = [ "network.target" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${xrayCfgGenerator} --file ${xrayCfgBase} --host 127.0.0.1 --port ${toString xrayGeneratorPort} --path /xray";
-      Restart = "on-failure";
-      DynamicUser = true;
+    locations."= /sing-box/simple-all.json" = {
+      basicAuthFile = config.age.secrets.htpasswd.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-simple-all.path};
+      '';
+    };
+
+    # backward compatibility
+    locations."= /sing-box/sing-box-proxy-blocked.json" = {
+      basicAuthFile = config.age.secrets.htpasswd.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-simple-blocked.path};
+      '';
+    };
+
+    # backward compatibility
+    locations."= /sing-box/sing-box-proxy-all-except-ru.json" = {
+      basicAuthFile = config.age.secrets.htpasswd.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-simple-all.path};
+      '';
+    };
+
+    locations."= /sing-box/blocked.json" = {
+      basicAuthFile = config.age.secrets.htpasswd-admin.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-blocked.path};
+      '';
+    };
+
+    locations."= /sing-box/all.json" = {
+      basicAuthFile = config.age.secrets.htpasswd-admin.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-all.path};
+      '';
     };
   };
 
@@ -92,19 +110,10 @@ in
       target = "http://127.0.0.1:${toString config.setup.nginxPort}";
     }
   ];
-
-  age.secrets = {
-    htpasswd = {
-      file = ../secrets/htpasswd.age;
-      mode = "440";
-      owner = "nginx";
-      group = "nginx";
-    };
-  }
-  // builtins.listToAttrs (
+  age.secrets = builtins.listToAttrs (
     map (name: {
       inherit name;
-      value = mkSingBoxSecret name;
+      value = mkNginxSecret name;
     }) singBoxSecretFiles
   );
 }

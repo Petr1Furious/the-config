@@ -6,8 +6,8 @@
       <libosinfo:os id="http://microsoft.com/win/11" />
     </libosinfo:libosinfo>
   </metadata>
-  <memory unit='KiB'>16777216</memory>
-  <currentMemory unit='KiB'>16777216</currentMemory>
+  <memory unit='KiB'>20971520</memory>
+  <currentMemory unit='KiB'>20971520</currentMemory>
   <memoryBacking>
     <source type='memfd' />
     <access mode='shared' />
@@ -162,6 +162,13 @@
         <address domain='0x0000' bus='0x0e' slot='0x00' function='0x0' />
       </source>
       <address type='pci' domain='0x0000' bus='0x08' slot='0x00' function='0x0' />
+    </hostdev>
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <driver name='vfio' />
+      <source>
+        <address domain='0x0000' bus='0x11' slot='0x00' function='0x6' />
+      </source>
+      <address type='pci' domain='0x0000' bus='0x09' slot='0x00' function='0x0' />
     </hostdev>
     <watchdog model='itco' action='reset' />
     <memballoon model='none' />

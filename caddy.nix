@@ -36,8 +36,8 @@
         email = "petrtsopa03@gmail.com";
         enableReload = true;
         package = pkgs.caddy.withPlugins {
-          plugins = [ "github.com/lucaslorentz/caddy-docker-proxy/v2@v2.10.0" ];
-          hash = "sha256-uv0KqU3CNosm87ugDytEEujOs685ZexNQu5Y2uFvxps=";
+          plugins = [ "github.com/lucaslorentz/caddy-docker-proxy/v2@v2.11.0" ];
+          hash = "sha256-38CMAq3ACH7/c4MziRsJflH45lhLhoxTcByAJgvjzrA=";
         };
         globalConfig = ''
           grace_period 30s
