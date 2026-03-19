@@ -136,19 +136,19 @@ def build_hysteria2_outbound(raw: dict, index: int):
     return outbound
 
 
-def build_urltest(tag: str, outbounds: list[str]):
+def build_urltest(tag: str, outbounds: list[str], interval: str, tolerance: int):
     return {
         "type": "urltest",
         "tag": tag,
         "outbounds": outbounds,
         "url": "https://cp.cloudflare.com/generate_204",
-        "interval": "3m",
-        "tolerance": 50,
+        "interval": interval,
+        "tolerance": tolerance,
         "interrupt_exist_connections": False,
     }
 
 
-def build_proxy_outbounds(vless_raw, hy2_raw):
+def build_proxy_outbounds(vless_raw, hy2_raw, urltest_interval: str, urltest_tolerance: int):
     vless_specs = as_outbound_list(vless_raw, "vless")
     hy2_specs = as_outbound_list(hy2_raw, "hy2")
 
@@ -171,11 +171,15 @@ def build_proxy_outbounds(vless_raw, hy2_raw):
 
     if len(vless_outbounds) > 1:
         vless_tags = [o["tag"] for o in vless_outbounds]
-        derived_outbounds.append(build_urltest("vless-auto", vless_tags))
+        derived_outbounds.append(
+            build_urltest("vless-auto", vless_tags, urltest_interval, urltest_tolerance)
+        )
         selector_candidates.append("vless-auto")
     if len(hy2_outbounds) > 1:
         hy2_tags = [o["tag"] for o in hy2_outbounds]
-        derived_outbounds.append(build_urltest("hy2-auto", hy2_tags))
+        derived_outbounds.append(
+            build_urltest("hy2-auto", hy2_tags, urltest_interval, urltest_tolerance)
+        )
         selector_candidates.append("hy2-auto")
 
     selector_candidates.extend(protocol_tags)
@@ -360,7 +364,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             vless_raw = parse_json_param(params, "vless", [])
             hy2_raw = parse_json_param(params, "hy2", [])
-            generated_outbounds = build_proxy_outbounds(vless_raw, hy2_raw)
+            urltest_interval = (first(params, "interval", "15s") or "15s").strip()
+            if not urltest_interval:
+                raise ValueError("'interval' must be a non-empty string")
+            urltest_tolerance = to_int(first(params, "tolerance", "200"), 200, "tolerance")
+            generated_outbounds = build_proxy_outbounds(
+                vless_raw, hy2_raw, urltest_interval, urltest_tolerance
+            )
             set_generated_outbounds(cfg, generated_outbounds)
         except ValueError as exc:
             self.send_error(400, str(exc))
