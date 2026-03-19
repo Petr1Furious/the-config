@@ -13,6 +13,9 @@
         environment = [
           "SERVER_BASE=https://mc-auth.petr1furious.me/"
           "YGG_KEY_PATH=/config/key.der"
+          "HTTP_PROXY=http://host.docker.internal:10809"
+          "HTTPS_PROXY=http://host.docker.internal:10809"
+          "NO_PROXY=localhost,127.0.0.1"
         ];
         extra_hosts = [ "host.docker.internal:host-gateway" ];
         image = "registry.vanutp.dev/minecraft/tgauth-backend:latest";

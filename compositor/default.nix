@@ -7,7 +7,6 @@
 
 {
   imports = [
-    ./services/clipcascade
     ./services/tgauth
     ./services/overleaf
     ./services/pterodactyl
@@ -27,7 +26,6 @@
         value =
           let
             composeFile = pkgs.writers.writeYAML "docker-compose-${name}.yml" content;
-
           in
           {
             description = "Docker Compose service for " + name;
