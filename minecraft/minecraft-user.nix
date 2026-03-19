@@ -80,6 +80,7 @@ in
   systemd.user.services.docker.environment = {
     DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";
     DOCKERD_ROOTLESS_ROOTLESSKIT_PORT_DRIVER = "implicit";
+    DOCKERD_ROOTLESS_ROOTLESSKIT_DISABLE_HOST_LOOPBACK = "false";
   };
 
   backup.locations = {
