@@ -1,13 +1,14 @@
 {
   config,
   lib,
-  pkgs,
   pkgs-unstable,
   ...
 }:
 
 {
   systemd.services.sing-box = {
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
     serviceConfig = {
       StateDirectory = "sing-box";
       StateDirectoryMode = "0700";

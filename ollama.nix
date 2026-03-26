@@ -1,21 +1,21 @@
 {
   config,
   lib,
-  pkgs,
+  pkgs-unstable,
   ...
 }:
 {
   services.ollama = {
     enable = true;
     port = 11434;
-    acceleration = "cuda";
+    package = pkgs-unstable.ollama-cuda;
     environmentVariables = {
       OLLAMA_LLM_LIBRARY = "cuda";
       LD_LIBRARY_PATH = "/run/opengl-driver/lib";
     };
   };
 
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = with pkgs-unstable; [
     ollama
   ];
 

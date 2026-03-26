@@ -76,6 +76,7 @@
     zip
     unzip
     nodejs_24
+    tmux
   ];
 
   programs.git = {
