@@ -346,6 +346,53 @@ def set_inbounds(config, mode: str):
             dict(inbound) if isinstance(inbound, dict) else inbound for inbound in inbounds
         ]
 
+    selected_inbound_tags = {
+        inbound.get("tag")
+        for inbound in config.get("inbounds", [])
+        if isinstance(inbound, dict) and isinstance(inbound.get("tag"), str) and inbound.get("tag")
+    }
+    trim_route_rules_for_inbounds(config, selected_inbound_tags)
+
+
+def _filter_rule_inbound_value(value, selected_tags: set[str]):
+    if isinstance(value, str):
+        return value if value in selected_tags else None
+    if isinstance(value, list):
+        kept = [x for x in value if isinstance(x, str) and x in selected_tags]
+        return kept if kept else None
+    return value
+
+
+def trim_route_rules_for_inbounds(config, selected_tags: set[str]):
+    route = config.get("route")
+    if not isinstance(route, dict):
+        return
+    rules = route.get("rules")
+    if not isinstance(rules, list):
+        return
+    if not selected_tags:
+        return
+
+    trimmed_rules = []
+    for rule in rules:
+        if not isinstance(rule, dict):
+            trimmed_rules.append(rule)
+            continue
+
+        if "inbound" not in rule:
+            trimmed_rules.append(rule)
+            continue
+
+        filtered = _filter_rule_inbound_value(rule.get("inbound"), selected_tags)
+        if filtered is None:
+            continue
+
+        new_rule = dict(rule)
+        new_rule["inbound"] = filtered
+        trimmed_rules.append(new_rule)
+
+    route["rules"] = trimmed_rules
+
 
 class Handler(BaseHTTPRequestHandler):
     route_path = "/"

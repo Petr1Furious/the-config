@@ -59,23 +59,22 @@
     "inbounds": [
         {
             "type": "socks",
+            "tag": "socks-in",
             "listen": "127.0.0.1",
-            "listen_port": 10808,
-            "sniff": true,
-            "sniff_override_destination": true
+            "listen_port": 10808
         },
         {
             "type": "http",
+            "tag": "http-in",
             "listen": "127.0.0.1",
-            "listen_port": 10809,
-            "sniff": true
+            "listen_port": 10809
         },
         {
             "type": "tun",
+            "tag": "tun-in",
             "address": "172.16.0.1/30",
             "auto_route": true,
-            "strict_route": true,
-            "sniff": true
+            "strict_route": true
         }
     ],
     "outbounds": [
@@ -89,6 +88,18 @@
         "final": "direct",
         "default_domain_resolver": "remote-doh-1",
         "rules": [
+            {
+                "inbound": "socks-in",
+                "action": "sniff"
+            },
+            {
+                "inbound": "http-in",
+                "action": "sniff"
+            },
+            {
+                "inbound": "tun-in",
+                "action": "sniff"
+            },
             {
                 "port": 53,
                 "action": "hijack-dns"
