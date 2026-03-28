@@ -12,6 +12,7 @@
     environmentVariables = {
       OLLAMA_LLM_LIBRARY = "cuda";
       LD_LIBRARY_PATH = "/run/opengl-driver/lib";
+      OLLAMA_CONTEXT_LENGTH = "${toString 65536}";
     };
   };
 
