@@ -6,7 +6,7 @@
 }:
 {
   fileSystems."/mnt/data" = {
-    device = "/dev/disk/by-id/nvme-Samsung_SSD_990_PRO_1TB_S6Z1NF0W700873F";
+    device = "/dev/disk/by-uuid/a22f022b-6ae0-47cf-84e5-a8f231b6b458";
     fsType = "ext4";
   };
 }
