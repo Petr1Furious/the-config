@@ -3,6 +3,7 @@
   lib,
   pkgs,
   pkgs-unstable,
+  pkgs-kernel,
   ...
 }:
 
@@ -26,7 +27,6 @@
     ./openrgb
     ./mounts.nix
     ./vaultwarden.nix
-    ./random.nix
     ./caddy.nix
     ./ollama.nix
   ];
@@ -59,6 +59,8 @@
   };
 
   boot = {
+    # newer kernels have bad iommu groups (??)
+    kernelPackages = pkgs-kernel.linuxPackages;
     kernelModules = [
       "nvidia"
       "nvidia_uvm"

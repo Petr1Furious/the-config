@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-kernel.url = "github:nixos/nixpkgs/1267bb4920d0fc06ea916734c11b0bf004bbe17e";
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -27,6 +28,7 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
+      nixpkgs-kernel,
       agenix,
       home-manager,
       vscode-server,
@@ -52,6 +54,12 @@
         ];
         specialArgs = {
           pkgs-unstable = import nixpkgs-unstable {
+            inherit system;
+            config = {
+              allowUnfree = true;
+            };
+          };
+          pkgs-kernel = import nixpkgs-kernel {
             inherit system;
             config = {
               allowUnfree = true;
