@@ -24,8 +24,10 @@ let
           ''
           + (lib.concatStringsSep "\n" (
             map (name: ''
-              ${docker} exec ${name} rcon-cli save-all flush
-              ${docker} exec ${name} rcon-cli save-off
+              if ${docker} container inspect ${name} >/dev/null 2>&1; then
+                ${docker} exec ${name} rcon-cli save-all flush
+                ${docker} exec ${name} rcon-cli save-off
+              fi
             '') container_names
           ))
         )
@@ -37,7 +39,9 @@ let
           ''
           + (lib.concatStringsSep "\n" (
             map (name: ''
-              ${docker} exec ${name} rcon-cli save-on
+              if ${docker} container inspect ${name} >/dev/null 2>&1; then
+                ${docker} exec ${name} rcon-cli save-on
+              fi
             '') container_names
           ))
         )
@@ -75,7 +79,7 @@ in
   virtualisation.docker.rootless = {
     enable = true;
     extraPackages = [ pkgs.passt ];
-    daemon.settings.dns = ["1.1.1.1"];
+    daemon.settings.dns = [ "1.1.1.1" ];
   };
   systemd.user.services.docker.environment = {
     DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";
