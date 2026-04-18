@@ -27,6 +27,8 @@ let
     "htpasswd-admin.age"
     "sing-box-blocked.age"
     "sing-box-all.age"
+    "sing-box-simple-all-legacy.age"
+    "sing-box-all-legacy.age"
   ];
 in
 builtins.listToAttrs (
