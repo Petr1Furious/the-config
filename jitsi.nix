@@ -44,4 +44,16 @@ in
       target = "http://127.0.0.1:${toString config.setup.nginxPort}";
     }
   ];
+
+  systemd.services.jitsi-videobridge2 = lib.mkIf config.services.jitsi-meet.prosody.enable {
+    after = [ "prosody.service" ];
+    requires = [ "prosody.service" ];
+  };
+
+  systemd.services.jicofo = lib.mkIf (
+    config.services.jitsi-meet.prosody.enable && config.services.jitsi-meet.jicofo.enable
+  ) {
+    after = [ "prosody.service" ];
+    requires = [ "prosody.service" ];
+  };
 }
