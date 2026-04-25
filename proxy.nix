@@ -12,6 +12,8 @@
     serviceConfig = {
       StateDirectory = "sing-box";
       StateDirectoryMode = "0700";
+      Restart = "on-failure";
+      RestartSec = "1min";
       ExecStart = [
         ""
         "${lib.getExe pkgs-unstable.sing-box} -D \${STATE_DIRECTORY} -c ${config.age.secrets.sing-box-http-proxy.path} run"
