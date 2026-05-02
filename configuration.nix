@@ -29,6 +29,7 @@
     ./vaultwarden.nix
     ./caddy.nix
     ./ollama.nix
+    ./random.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -116,7 +117,9 @@
     80
     443
   ];
-  networking.firewall.allowedUDPPorts = [ 443 ];
+  networking.firewall.allowedUDPPorts = [
+    443
+  ];
 
   swapDevices = [
     {
@@ -124,6 +127,8 @@
       size = 16 * 1024;
     }
   ];
+
+  boot.extraModprobeConfig = "install algif_aead /bin/false";
 
   system.stateVersion = "24.11"; # Do not touch this value unless you know what you are doing.
 

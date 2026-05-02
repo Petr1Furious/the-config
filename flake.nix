@@ -19,7 +19,7 @@
     };
     nixarr = {
       url = "github:rasmus-kirk/nixarr";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
   };
 
@@ -34,10 +34,26 @@
       vscode-server,
       nixarr,
     }:
+    let
+      system = "x86_64-linux";
+      # nixarr references services.shelfmark
+      pkgsUnstable = import nixpkgs-unstable {
+        inherit system;
+        config.allowUnfree = true;
+      };
+    in
     {
-      nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem (rec {
-        system = "x86_64-linux";
+      nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem {
+        inherit system;
         modules = [
+          {
+            nixpkgs.overlays = [
+              (_final: prev: {
+                shelfmark = pkgsUnstable.shelfmark;
+              })
+            ];
+          }
+          "${nixpkgs-unstable}/nixos/modules/services/misc/shelfmark.nix"
           ./configuration.nix
           agenix.nixosModules.default
           {
@@ -66,6 +82,6 @@
             };
           };
         };
-      });
+      };
     };
 }
