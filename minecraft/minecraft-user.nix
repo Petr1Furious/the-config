@@ -88,8 +88,8 @@ in
   };
 
   backup.locations = {
-    modded-hserver = make-minecraft-backups [ "modded_hserver" ] // {
-      from = [ "/home/minecraft/modded-hserver" ];
+    mpsmp-26 = make-minecraft-backups [ "mpsmp_26" ] // {
+      from = [ "/home/minecraft/mpsmp-26" ];
       cron = "30 * * * *";
     };
     minigames =
@@ -109,7 +109,6 @@ in
   // make-launcher-backups [
     "potato-launcher"
     "hse-launcher"
-    "itmo-launcher"
   ];
 
   caddy.proxies = [
@@ -137,26 +136,22 @@ in
       host = "hseminecraft.ru";
       target = "http://127.0.0.1:8002";
     }
-    {
-      host = "mcitmo.ru";
-      target = "http://127.0.0.1:8003";
-    }
   ];
 
-  services.prometheus.scrapeConfigs = [
-    {
-      job_name = "modded-hserver";
-      static_configs = [
-        {
-          targets = [ "localhost:${prometheusExporterPort}" ];
-        }
-      ];
-    }
-  ];
+  # services.prometheus.scrapeConfigs = [
+  #   {
+  #     job_name = "modded-hserver";
+  #     static_configs = [
+  #       {
+  #         targets = [ "localhost:${prometheusExporterPort}" ];
+  #       }
+  #     ];
+  #   }
+  # ];
 
-  environment.etc."grafana-dashboards/modded-hserver.json" = {
-    source = ./grafana-dashboards/modded-hserver.json;
-    user = "grafana";
-    group = "grafana";
-  };
+  # environment.etc."grafana-dashboards/modded-hserver.json" = {
+  #   source = ./grafana-dashboards/modded-hserver.json;
+  #   user = "grafana";
+  #   group = "grafana";
+  # };
 }
