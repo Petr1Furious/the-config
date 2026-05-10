@@ -37,7 +37,7 @@
         enableReload = true;
         package = pkgs.caddy.withPlugins {
           plugins = [ "github.com/lucaslorentz/caddy-docker-proxy/v2@v2.12.0" ];
-          hash = "sha256-sinbHpnDLNzQ6vYEx4inW06bYnZA5lmBjBDDMt3C5wg=";
+          hash = "sha256-5me4SCOqVcHCw3ca7AH3Lh96Mg3VdOKZjY7v/Nq9v/Q=";
         };
         globalConfig = ''
           grace_period 30s

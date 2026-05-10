@@ -138,20 +138,20 @@ in
     }
   ];
 
-  # services.prometheus.scrapeConfigs = [
-  #   {
-  #     job_name = "modded-hserver";
-  #     static_configs = [
-  #       {
-  #         targets = [ "localhost:${prometheusExporterPort}" ];
-  #       }
-  #     ];
-  #   }
-  # ];
+  services.prometheus.scrapeConfigs = [
+    {
+      job_name = "mpsmp-26";
+      static_configs = [
+        {
+          targets = [ "localhost:${prometheusExporterPort}" ];
+        }
+      ];
+    }
+  ];
 
-  # environment.etc."grafana-dashboards/modded-hserver.json" = {
-  #   source = ./grafana-dashboards/modded-hserver.json;
-  #   user = "grafana";
-  #   group = "grafana";
-  # };
+  environment.etc."grafana-dashboards/mpsmp-26.json" = {
+    source = ./grafana-dashboards/mpsmp-26.json;
+    user = "grafana";
+    group = "grafana";
+  };
 }
