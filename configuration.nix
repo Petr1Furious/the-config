@@ -3,7 +3,6 @@
   lib,
   pkgs,
   pkgs-unstable,
-  pkgs-kernel,
   ...
 }:
 
@@ -60,8 +59,10 @@
   };
 
   boot = {
-    # newer kernels have bad iommu groups (??)
-    kernelPackages = pkgs-kernel.linuxPackages;
+    kernel.sysctl = {
+      "kernel.yama.ptrace_scope" = 2;
+      "vm.compaction_proactiveness" = 0;
+    };
     kernelModules = [
       "nvidia"
       "nvidia_uvm"
@@ -127,8 +128,6 @@
       size = 16 * 1024;
     }
   ];
-
-  boot.extraModprobeConfig = "install algif_aead /bin/false";
 
   system.stateVersion = "24.11"; # Do not touch this value unless you know what you are doing.
 
