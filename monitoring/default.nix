@@ -24,6 +24,7 @@ in
         inherit domain;
         http_port = grafanaPort;
       };
+      security.secret_key = "$__file{${config.age.secrets.grafana-secret-key.path}}";
       analytics.reporting_enabled = false;
     };
     provision = {
@@ -78,4 +79,11 @@ in
       target = "http://localhost:${toString grafanaPort}";
     }
   ];
+
+  age.secrets.grafana-secret-key = {
+    file = ../secrets/grafana-secret-key.age;
+    mode = "440";
+    owner = "grafana";
+    group = "grafana";
+  };
 }

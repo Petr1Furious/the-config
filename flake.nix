@@ -2,14 +2,14 @@
   description = "My NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     vscode-server = {
@@ -34,7 +34,6 @@
     }:
     let
       system = "x86_64-linux";
-      # nixarr references services.shelfmark
       pkgsUnstable = import nixpkgs-unstable {
         inherit system;
         config.allowUnfree = true;
@@ -47,11 +46,10 @@
           {
             nixpkgs.overlays = [
               (_final: prev: {
-                shelfmark = pkgsUnstable.shelfmark;
+                jellyfin = pkgsUnstable.jellyfin;
               })
             ];
           }
-          "${nixpkgs-unstable}/nixos/modules/services/misc/shelfmark.nix"
           ./configuration.nix
           agenix.nixosModules.default
           {
