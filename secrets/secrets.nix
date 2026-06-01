@@ -29,6 +29,7 @@ let
     "sing-box-all.age"
     "sing-box-simple-all-legacy.age"
     "sing-box-all-legacy.age"
+    "sing-box-proxy-config.age"
     "grafana-secret-key.age"
   ];
 in

@@ -22,6 +22,7 @@ let
     "sing-box-all"
     "sing-box-simple-all-legacy"
     "sing-box-all-legacy"
+    "sing-box-http-proxy"
   ];
 
   xrayGeneratorPort = 18080;
@@ -117,6 +118,13 @@ in
       basicAuthFile = config.age.secrets.htpasswd-admin.path;
       extraConfig = ''
         include ${config.age.secrets.sing-box-all-legacy.path};
+      '';
+    };
+
+    locations."= /sing-box/http-proxy.json" = {
+      basicAuthFile = config.age.secrets.htpasswd-admin.path;
+      extraConfig = ''
+        include ${config.age.secrets.sing-box-http-proxy.path};
       '';
     };
   };

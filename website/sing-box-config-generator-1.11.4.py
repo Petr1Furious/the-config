@@ -149,7 +149,17 @@ def build_urltest(tag: str, outbounds: list[str], interval: str, tolerance: int)
     }
 
 
-def build_proxy_outbounds(vless_raw, hy2_raw, urltest_interval: str, urltest_tolerance: int):
+PROXY_REF_KEYS = frozenset({"outbound", "detour", "download_detour"})
+
+
+def build_proxy_outbounds(
+    vless_raw,
+    hy2_raw,
+    urltest_interval: str,
+    urltest_tolerance: int,
+    urltest_all: bool = False,
+    include_selector: bool = True,
+):
     vless_specs = as_outbound_list(vless_raw, "vless")
     hy2_specs = as_outbound_list(hy2_raw, "hy2")
 
@@ -183,16 +193,69 @@ def build_proxy_outbounds(vless_raw, hy2_raw, urltest_interval: str, urltest_tol
         )
         selector_candidates.append("hy2-auto")
 
+    if urltest_all and len(protocol_outbounds) > 1:
+        derived_outbounds.append(
+            build_urltest("proxy-auto", protocol_tags, urltest_interval, urltest_tolerance)
+        )
+        selector_candidates.insert(0, "proxy-auto")
+
     selector_candidates.extend(protocol_tags)
 
-    proxy_selector = {
-        "type": "selector",
-        "tag": "proxy",
-        "outbounds": selector_candidates,
-        "default": selector_candidates[0],
-    }
+    outbounds = protocol_outbounds + derived_outbounds
+    if include_selector:
+        outbounds.append(
+            {
+                "type": "selector",
+                "tag": "proxy",
+                "outbounds": selector_candidates,
+                "default": selector_candidates[0],
+            }
+        )
+    return outbounds
 
-    return protocol_outbounds + derived_outbounds + [proxy_selector]
+
+def outbound_tags(outbounds: list) -> set[str]:
+    tags: set[str] = set()
+    for outbound in outbounds:
+        if isinstance(outbound, dict):
+            tag = outbound.get("tag")
+            if isinstance(tag, str) and tag:
+                tags.add(tag)
+    return tags
+
+
+def validate_fixed_outbound(tag: str, generated_outbounds: list):
+    allowed = outbound_tags(generated_outbounds)
+    if tag not in allowed:
+        raise ValueError(
+            f"'fixed_outbound' must be a generated outbound tag; got '{tag}'. "
+            f"Available: {', '.join(sorted(allowed))}"
+        )
+
+
+def replace_proxy_references(obj, fixed_tag: str):
+    if isinstance(obj, dict):
+        replaced = {}
+        for key, value in obj.items():
+            if key in PROXY_REF_KEYS and value == "proxy":
+                replaced[key] = fixed_tag
+            elif key == "final" and value == "proxy":
+                replaced[key] = fixed_tag
+            else:
+                replaced[key] = replace_proxy_references(value, fixed_tag)
+        return replaced
+    if isinstance(obj, list):
+        return [replace_proxy_references(item, fixed_tag) for item in obj]
+    return obj
+
+
+def apply_fixed_outbound(config, fixed_tag: str):
+    dns = config.get("dns")
+    if isinstance(dns, dict):
+        config["dns"] = replace_proxy_references(dns, fixed_tag)
+    route = config.get("route")
+    if isinstance(route, dict):
+        config["route"] = replace_proxy_references(route, fixed_tag)
 
 
 def set_generated_outbounds(config, generated_outbounds):
@@ -200,7 +263,7 @@ def set_generated_outbounds(config, generated_outbounds):
     if not isinstance(outbounds, list):
         outbounds = []
 
-    reserved_tags = {"proxy", "vless-auto", "hy2-auto"}
+    reserved_tags = {"proxy", "proxy-auto", "vless-auto", "hy2-auto"}
     reserved_types = {"vless", "hysteria2", "urltest", "selector", "anytls"}
     base_outbounds = []
     for outbound in outbounds:
@@ -314,12 +377,18 @@ def reorder_outbounds(config, primary_tag: str | None):
         config["outbounds"] = primary + rest
 
 
-def set_route_final(config, primary: str | None):
-    if primary not in {"proxy", "direct"}:
+def set_route_final(config, final: str | None):
+    if not final:
         return
     route = config.get("route")
     if isinstance(route, dict):
-        route["final"] = primary
+        route["final"] = final
+
+
+def resolve_route_final(primary: str, fixed_outbound: str | None) -> str:
+    if primary == "proxy" and fixed_outbound:
+        return fixed_outbound
+    return primary
 
 
 def set_inbounds(config, mode: str):
@@ -409,6 +478,7 @@ class Handler(BaseHTTPRequestHandler):
 
         cfg = deep_clone(self.template)
         cfg = build_populator(params)(cfg)
+        fixed_outbound = None
         try:
             vless_raw = parse_json_param(params, "vless", [])
             hy2_raw = parse_json_param(params, "hy2", [])
@@ -416,10 +486,24 @@ class Handler(BaseHTTPRequestHandler):
             if not urltest_interval:
                 raise ValueError("'interval' must be a non-empty string")
             urltest_tolerance = to_int(first(params, "tolerance", "200"), 200, "tolerance")
+            urltest_all = is_truthy(first(params, "urltest_all", None))
+            fixed_outbound_raw = first(params, "fixed_outbound", None)
+            fixed_outbound = (
+                (fixed_outbound_raw or "").strip() if fixed_outbound_raw is not None else None
+            ) or None
             generated_outbounds = build_proxy_outbounds(
-                vless_raw, hy2_raw, urltest_interval, urltest_tolerance
+                vless_raw,
+                hy2_raw,
+                urltest_interval,
+                urltest_tolerance,
+                urltest_all=urltest_all,
+                include_selector=fixed_outbound is None,
             )
+            if fixed_outbound:
+                validate_fixed_outbound(fixed_outbound, generated_outbounds)
             set_generated_outbounds(cfg, generated_outbounds)
+            if fixed_outbound:
+                apply_fixed_outbound(cfg, fixed_outbound)
         except ValueError as exc:
             self.send_error(400, str(exc))
             return
@@ -429,8 +513,10 @@ class Handler(BaseHTTPRequestHandler):
         if primary not in {"proxy", "direct"}:
             self.send_error(400, "Bad primary value; use proxy or direct")
             return
-        reorder_outbounds(cfg, primary)
-        set_route_final(cfg, primary)
+        route_final = resolve_route_final(primary, fixed_outbound)
+        reorder_tag = route_final if primary == "proxy" else primary
+        reorder_outbounds(cfg, reorder_tag)
+        set_route_final(cfg, route_final)
 
         inbound_raw = first(params, "inbound", "tun")
         inbound_mode = (inbound_raw or "tun").strip().lower()

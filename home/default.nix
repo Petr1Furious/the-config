@@ -62,7 +62,7 @@
   };
 
   home.packages = with pkgs; [
-    nixfmt-rfc-style
+    nixfmt
     tealdeer
     gcc
     manix

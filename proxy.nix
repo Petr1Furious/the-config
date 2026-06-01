@@ -16,7 +16,7 @@
       RestartSec = "1min";
       ExecStart = [
         ""
-        "${lib.getExe pkgs-unstable.sing-box} -D \${STATE_DIRECTORY} -c ${config.age.secrets.sing-box-http-proxy.path} run"
+        "${lib.getExe pkgs-unstable.sing-box} -D \${STATE_DIRECTORY} -c ${config.age.secrets.sing-box-proxy-config.path} run"
       ];
     };
     wantedBy = [ "multi-user.target" ];
@@ -27,7 +27,7 @@
     10809
   ];
 
-  age.secrets.sing-box-http-proxy = {
-    file = ./secrets/sing-box-http-proxy.age;
+  age.secrets.sing-box-proxy-config = {
+    file = ./secrets/sing-box-proxy-config.age;
   };
 }
