@@ -424,6 +424,15 @@ def set_inbounds(config, mode: str):
     trim_route_rules_for_inbounds(config, selected_inbound_tags)
 
 
+def set_proxy_inbounds_listen(config, listen: str):
+    inbounds = config.get("inbounds")
+    if not isinstance(inbounds, list):
+        return
+    for inbound in inbounds:
+        if isinstance(inbound, dict) and inbound.get("type") in {"socks", "http"}:
+            inbound["listen"] = listen
+
+
 def _filter_rule_inbound_value(value, selected_tags: set[str]):
     if isinstance(value, str):
         return value if value in selected_tags else None
@@ -524,6 +533,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(400, "Bad inbound value; use tun or proxy")
             return
         set_inbounds(cfg, inbound_mode)
+
+        if is_truthy(first(params, "proxy_public", None)):
+            set_proxy_inbounds_listen(cfg, "0.0.0.0")
 
         if is_truthy(first(params, "allow_ads", None)):
             remove_ads_rule(cfg)
