@@ -16,21 +16,15 @@ let
     "tgauth-key.age"
     "tgauth-env.age"
     "htpasswd.age"
-    "sing-box-simple-blocked.age"
-    "sing-box-simple-all.age"
-    "sing-box-http-proxy.age"
     "nextcloud-admin-password.age"
     "pterodactyl-panel-env.age"
     "pterodactyl-db-env.age"
     "cleanup-script.age"
     "clipcascade-db-password.age"
     "htpasswd-admin.age"
-    "sing-box-blocked.age"
-    "sing-box-all.age"
-    "sing-box-simple-all-legacy.age"
-    "sing-box-all-legacy.age"
     "sing-box-proxy-config.age"
     "grafana-secret-key.age"
+    "meowconnect-env.age"
   ];
 in
 builtins.listToAttrs (

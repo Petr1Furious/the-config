@@ -12,35 +12,46 @@ EXAMPLE_SPEC = {
     "base_url": DEFAULT_BASE_URL,
     "primary": "proxy",
     "inbound": "tun",
+    "legacy": False,
     "allow_ads": False,
     "no_ru_blocked_community": False,
     "no_re_filter": False,
-    "vless": [
+    "outbounds": [
         {
-            "tag": "vless-s1",
+            "type": "vless",
+            "tag": "proxy-s1",
             "server": "example-vless-1.com",
             "server_port": 443,
             "uuid": "00000000-0000-0000-0000-000000000000",
-            "flow": "",
-            "server_name": "cdn.example.com",
-            "fingerprint": "chrome",
-            "public_key": "REALITY_PUBLIC_KEY",
-            "short_id": "abcd1234",
-        }
-    ],
-    "hy2": [
+            "tls": {
+                "enabled": True,
+                "server_name": "cdn.example.com",
+                "utls": {
+                    "enabled": True,
+                    "fingerprint": "chrome",
+                },
+                "reality": {
+                    "enabled": True,
+                    "public_key": "REALITY_PUBLIC_KEY",
+                    "short_id": "abcd1234",
+                },
+            },
+        },
         {
-            "tag": "hy2-s1",
+            "type": "hysteria2",
+            "tag": "proxy-s2",
             "server": "example-hy2-1.com",
             "server_port": 443,
-            "up_mbps": 100,
-            "down_mbps": 100,
             "password": "hy2-password",
-            "obfs_type": "salamander",
-            "obfs_password": "obfs-password",
-            "server_name": "cdn.example.com",
-            "fingerprint": "chrome",
-        }
+            "obfs": {
+                "type": "salamander",
+                "password": "obfs-password",
+            },
+            "tls": {
+                "enabled": True,
+                "server_name": "cdn.example.com",
+            },
+        },
     ],
 }
 
@@ -63,6 +74,9 @@ def build_query(spec: dict):
     for key in (
         "primary",
         "inbound",
+        "legacy",
+        "fixed_outbound",
+        "proxy_public",
         "allow_ads",
         "no_ru_blocked_community",
         "no_re_filter",
@@ -74,19 +88,13 @@ def build_query(spec: dict):
             elif value is not None:
                 params[key] = str(value)
 
-    vless = spec.get("vless", [])
-    hy2 = spec.get("hy2", [])
+    outbounds = spec.get("outbounds", [])
+    if not isinstance(outbounds, (dict, list)):
+        raise ValueError("'outbounds' must be an object or array")
+    if not outbounds:
+        raise ValueError("'outbounds' must contain at least one outbound")
 
-    if not isinstance(vless, (dict, list)):
-        raise ValueError("'vless' must be an object or array")
-    if not isinstance(hy2, (dict, list)):
-        raise ValueError("'hy2' must be an object or array")
-
-    if not vless and not hy2:
-        raise ValueError("At least one of 'vless' or 'hy2' must be provided")
-
-    params["vless"] = compact_json(vless)
-    params["hy2"] = compact_json(hy2)
+    params["outbounds"] = compact_json(outbounds)
     return params
 
 

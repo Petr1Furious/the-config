@@ -13,27 +13,24 @@ let
     group = "nginx";
   };
 
-  singBoxSecretFiles = [
-    "htpasswd"
-    "htpasswd-admin"
-    "sing-box-simple-blocked"
-    "sing-box-simple-all"
-    "sing-box-blocked"
-    "sing-box-all"
-    "sing-box-simple-all-legacy"
-    "sing-box-all-legacy"
-    "sing-box-http-proxy"
-  ];
-
-  xrayGeneratorPort = 18080;
-  xrayCfgBase = ./xray-config-base.json;
-  xrayCfgGenerator = ./xray-config-generator.py;
   singBoxGeneratorPort = 18081;
-  singBoxGeneratorPort114 = 18082;
   singBoxCfgBase = ./sing-box-config-base.json;
   singBoxCfgBase114 = ./sing-box-config-base-1.11.4.json;
   singBoxCfgGenerator = ./sing-box-config-generator.py;
-  singBoxCfgGenerator114 = ./sing-box-config-generator-1.11.4.py;
+  singBoxShortcutDir = "/srv/sing-box-generator";
+  singBoxGeneratorUser = "sing-box-generator";
+
+  meowconnectPort = 18083;
+  websiteRoot = ./.;
+  meowconnectStateDir = "/var/lib/meowconnect";
+  meowconnectUser = "meowconnect";
+
+  mkMeowSecret = file: {
+    file = ../secrets/${file}.age;
+    mode = "0400";
+    owner = meowconnectUser;
+    group = meowconnectUser;
+  };
 in
 {
   services.nginx.virtualHosts."petr1furious.me" = {
@@ -45,7 +42,8 @@ in
       return = "302 /sing-box/";
     };
 
-    locations."/sing-box/generate" = {
+    locations."/sing-box/" = {
+      basicAuthFile = config.age.secrets.htpasswd.path;
       proxyPass = "http://127.0.0.1:${toString singBoxGeneratorPort}";
       extraConfig = ''
         proxy_set_header Host $host;
@@ -53,101 +51,67 @@ in
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       '';
     };
-
-    locations."/sing-box/generate-legacy" = {
-      proxyPass = "http://127.0.0.1:${toString singBoxGeneratorPort114}";
-      extraConfig = ''
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      '';
-    };
-
-    locations."= /sing-box/simple-blocked.json" = {
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-simple-blocked.path};
-      '';
-    };
-
-    locations."= /sing-box/simple-all.json" = {
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-simple-all.path};
-      '';
-    };
-
-    # backward compatibility
-    locations."= /sing-box/sing-box-proxy-blocked.json" = {
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-simple-blocked.path};
-      '';
-    };
-
-    # backward compatibility
-    locations."= /sing-box/sing-box-proxy-all-except-ru.json" = {
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-simple-all.path};
-      '';
-    };
-
-    locations."= /sing-box/blocked.json" = {
-      basicAuthFile = config.age.secrets.htpasswd-admin.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-blocked.path};
-      '';
-    };
-
-    locations."= /sing-box/all.json" = {
-      basicAuthFile = config.age.secrets.htpasswd-admin.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-all.path};
-      '';
-    };
-
-    locations."= /sing-box/simple-all-legacy.json" = {
-      basicAuthFile = config.age.secrets.htpasswd.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-simple-all-legacy.path};
-      '';
-    };
-
-    locations."= /sing-box/all-legacy.json" = {
-      basicAuthFile = config.age.secrets.htpasswd-admin.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-all-legacy.path};
-      '';
-    };
-
-    locations."= /sing-box/http-proxy.json" = {
-      basicAuthFile = config.age.secrets.htpasswd-admin.path;
-      extraConfig = ''
-        include ${config.age.secrets.sing-box-http-proxy.path};
-      '';
-    };
   };
+
+  users.groups.${singBoxGeneratorUser} = { };
+  users.users.${singBoxGeneratorUser} = {
+    isSystemUser = true;
+    group = singBoxGeneratorUser;
+  };
+
+  users.groups.${meowconnectUser} = { };
+  users.users.${meowconnectUser} = {
+    isSystemUser = true;
+    group = meowconnectUser;
+  };
+
+  systemd.tmpfiles.rules = [
+    "d ${singBoxShortcutDir} 0750 ${singBoxGeneratorUser} ${singBoxGeneratorUser} -"
+    "d ${meowconnectStateDir} 0750 ${meowconnectUser} ${meowconnectUser} -"
+  ];
 
   systemd.services.sing-box-config-generator = {
     description = "sing-box config templating HTTP server";
-    after = [ "network.target" ];
+    after = [ "network.target" "meowconnect-outbounds.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate";
+      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --legacy-file ${singBoxCfgBase114} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate --shortcut-dir ${singBoxShortcutDir} --meowconnect-url http://127.0.0.1:${toString meowconnectPort}/outbounds";
       Restart = "on-failure";
-      DynamicUser = true;
+      User = singBoxGeneratorUser;
+      Group = singBoxGeneratorUser;
     };
   };
 
-  systemd.services.sing-box-config-generator-legacy-1-11-4 = {
-    description = "sing-box 1.11.4 legacy config templating HTTP server";
+  systemd.services.meowconnect-outbounds = {
+    description = "MeowConnect outbound cache HTTP server";
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator114} --file ${singBoxCfgBase114} --host 127.0.0.1 --port ${toString singBoxGeneratorPort114} --path /sing-box/generate-legacy";
+      ExecStart = "${lib.getExe pkgs.python3} -m meowconnect.server --state-dir ${meowconnectStateDir} --host 127.0.0.1 --port ${toString meowconnectPort} --refresh-on-start";
+      Environment = "PYTHONPATH=${websiteRoot}";
+      WorkingDirectory = "${websiteRoot}";
+      EnvironmentFile = config.age.secrets.meowconnect-env.path;
       Restart = "on-failure";
-      DynamicUser = true;
+      User = meowconnectUser;
+      Group = meowconnectUser;
+    };
+  };
+
+  systemd.services.meowconnect-outbounds-refresh = {
+    description = "Refresh MeowConnect outbound cache";
+    after = [ "meowconnect-outbounds.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${lib.getExe pkgs.curl} -fsS -X POST http://127.0.0.1:${toString meowconnectPort}/refresh";
+    };
+  };
+
+  systemd.timers.meowconnect-outbounds-refresh = {
+    description = "Refresh MeowConnect outbound cache every 4 hours";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "*-*-* 00/4:00:00";
+      Persistent = true;
     };
   };
 
@@ -157,10 +121,7 @@ in
       target = "http://127.0.0.1:${toString config.setup.nginxPort}";
     }
   ];
-  age.secrets = builtins.listToAttrs (
-    map (name: {
-      inherit name;
-      value = mkNginxSecret name;
-    }) singBoxSecretFiles
-  );
+
+  age.secrets.htpasswd = mkNginxSecret "htpasswd";
+  age.secrets.meowconnect-env = mkMeowSecret "meowconnect-env";
 }

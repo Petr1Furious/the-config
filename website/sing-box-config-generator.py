@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import argparse
-import ipaddress
 import json
-import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import parse_qs, urlparse
+from pathlib import Path
+from urllib.error import URLError
+from urllib.parse import parse_qs, unquote, urlparse
+from urllib.request import urlopen
 
-PLACEHOLDER_RE = re.compile(r"\{\{(\w+)\}\}")
+URLTEST_INTERVAL = "15s"
+URLTEST_TOLERANCE = 200
 
 
 def is_truthy(val: str | None) -> bool:
@@ -18,14 +20,6 @@ def is_truthy(val: str | None) -> bool:
 def first(params: dict[str, list[str]], key: str, default: str | None = ""):
     vals = params.get(key)
     return vals[0] if vals and vals[0] is not None else default
-
-
-def looks_like_ip(s: str) -> bool:
-    try:
-        ipaddress.ip_address(s)
-        return True
-    except Exception:
-        return False
 
 
 def deep_clone(obj):
@@ -42,108 +36,69 @@ def parse_json_param(params: dict[str, list[str]], key: str, default):
         raise ValueError(f"Bad JSON in '{key}': {exc.msg}") from exc
 
 
-def as_outbound_list(raw, key: str):
+def as_outbound_list(raw):
     if raw is None:
         return []
     if isinstance(raw, list):
         return raw
     if isinstance(raw, dict):
         return [raw]
-    raise ValueError(f"'{key}' must be a JSON object or array")
+    raise ValueError("'outbounds' must be a JSON object or array")
 
 
-def to_int(value, default: int, field: str):
-    if value is None or value == "":
-        return default
+def uses_meowconnect_source(params: dict[str, list[str]]) -> bool:
+    raw = first(params, "outbounds_source", None)
+    if raw is None:
+        return False
+    return (raw or "").strip().lower() == "meowconnect"
+
+
+def fetch_meowconnect_outbounds(url: str) -> list:
+    if not url:
+        raise ValueError("MeowConnect outbounds URL is not configured")
     try:
-        return int(value)
-    except Exception as exc:
-        raise ValueError(f"'{field}' must be an integer") from exc
+        with urlopen(url, timeout=30) as response:
+            body = response.read()
+    except URLError as exc:
+        raise ValueError(f"Failed to fetch MeowConnect outbounds: {exc}") from exc
+
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"MeowConnect outbounds response is not JSON: {exc.msg}") from exc
+
+    outbounds = as_outbound_list(data)
+    if not outbounds:
+        raise ValueError("MeowConnect outbounds cache is empty")
+    return outbounds
 
 
-def build_vless_outbound(raw: dict, index: int):
-    if not isinstance(raw, dict):
-        raise ValueError("Each vless outbound must be a JSON object")
+def resolve_outbounds_raw(params: dict[str, list[str]], meowconnect_url: str | None):
+    explicit_raw = parse_json_param(params, "outbounds", [])
+    explicit = as_outbound_list(explicit_raw)
+    use_meow = uses_meowconnect_source(params)
 
-    server = str(raw.get("server", "")).strip()
-    if not server:
-        raise ValueError("vless outbound requires 'server'")
-
-    tag = str(raw.get("tag", "")).strip() or f"vless-s{index}"
-    server_name = str(raw.get("server_name", "")).strip() or server
-    uuid = str(raw.get("uuid", "")).strip()
-    if not uuid:
-        raise ValueError(f"vless outbound '{tag}' requires 'uuid'")
-
-    return {
-        "type": "vless",
-        "tag": tag,
-        "server": server,
-        "server_port": to_int(raw.get("server_port"), 443, f"{tag}.server_port"),
-        "uuid": uuid,
-        "flow": str(raw.get("flow", "")).strip(),
-        "tls": {
-            "enabled": True,
-            "server_name": server_name,
-            "utls": {
-                "enabled": True,
-                "fingerprint": str(raw.get("fingerprint", "chrome")).strip() or "chrome",
-            },
-            "reality": {
-                "enabled": True,
-                "public_key": str(raw.get("public_key", "")).strip(),
-                "short_id": str(raw.get("short_id", "")).strip(),
-            },
-        },
-    }
+    if use_meow and explicit:
+        meow_outbounds = fetch_meowconnect_outbounds(meowconnect_url or "")
+        return explicit + meow_outbounds
+    if use_meow:
+        return fetch_meowconnect_outbounds(meowconnect_url or "")
+    if explicit:
+        return explicit
+    raise ValueError(
+        "No proxy outbounds configured. Provide 'outbounds' and/or "
+        "'outbounds_source=meowconnect'."
+    )
 
 
-def build_hysteria2_outbound(raw: dict, index: int):
-    if not isinstance(raw, dict):
-        raise ValueError("Each hysteria2 outbound must be a JSON object")
-
-    server = str(raw.get("server", "")).strip()
-    if not server:
-        raise ValueError("hysteria2 outbound requires 'server'")
-
-    tag = str(raw.get("tag", "")).strip() or f"hy2-s{index}"
-    server_name = str(raw.get("server_name", "")).strip() or server
-    password = str(raw.get("password", "")).strip()
-    if not password:
-        raise ValueError(f"hysteria2 outbound '{tag}' requires 'password'")
-
-    outbound = {
-        "type": "hysteria2",
-        "tag": tag,
-        "server": server,
-        "server_port": to_int(raw.get("server_port"), 443, f"{tag}.server_port"),
-        "password": password,
-        "obfs": {
-            "type": str(raw.get("obfs_type", "salamander")).strip() or "salamander",
-            "password": str(raw.get("obfs_password", "")).strip(),
-        },
-        "tls": {
-            "enabled": True,
-            "server_name": server_name
-        },
-    }
-
-    if "up_mbps" in raw and raw.get("up_mbps") not in (None, ""):
-        outbound["up_mbps"] = to_int(raw.get("up_mbps"), 0, f"{tag}.up_mbps")
-    if "down_mbps" in raw and raw.get("down_mbps") not in (None, ""):
-        outbound["down_mbps"] = to_int(raw.get("down_mbps"), 0, f"{tag}.down_mbps")
-
-    return outbound
-
-
-def build_urltest(tag: str, outbounds: list[str], interval: str, tolerance: int):
+def build_urltest(tag: str, outbounds: list[str]):
     return {
         "type": "urltest",
         "tag": tag,
         "outbounds": outbounds,
         "url": "https://cp.cloudflare.com/generate_204",
-        "interval": interval,
-        "tolerance": tolerance,
+        "interval": URLTEST_INTERVAL,
+        "tolerance": URLTEST_TOLERANCE,
         "interrupt_exist_connections": False,
     }
 
@@ -151,66 +106,41 @@ def build_urltest(tag: str, outbounds: list[str], interval: str, tolerance: int)
 PROXY_REF_KEYS = frozenset({"outbound", "detour", "download_detour"})
 
 
-def build_proxy_outbounds(
-    vless_raw,
-    hy2_raw,
-    urltest_interval: str,
-    urltest_tolerance: int,
-    urltest_all: bool = False,
-    include_selector: bool = True,
-):
-    vless_specs = as_outbound_list(vless_raw, "vless")
-    hy2_specs = as_outbound_list(hy2_raw, "hy2")
-
-    vless_outbounds = [
-        build_vless_outbound(raw, idx + 1) for idx, raw in enumerate(vless_specs)
-    ]
-    hy2_outbounds = [
-        build_hysteria2_outbound(raw, idx + 1) for idx, raw in enumerate(hy2_specs)
-    ]
-
-    protocol_outbounds = vless_outbounds + hy2_outbounds
-    if not protocol_outbounds:
+def build_proxy_outbounds(raw, include_selector: bool = True):
+    provided_outbounds = as_outbound_list(raw)
+    if not provided_outbounds:
         raise ValueError(
-            "No proxy outbounds configured. Provide JSON in query params 'vless' and/or 'hy2'."
+            "No proxy outbounds configured. Provide JSON in query param 'outbounds'."
         )
 
-    protocol_tags = [o["tag"] for o in protocol_outbounds]
-    derived_outbounds = []
-    selector_candidates = []
+    proxy_outbounds = []
+    tags = []
+    for index, raw_outbound in enumerate(provided_outbounds, start=1):
+        if not isinstance(raw_outbound, dict):
+            raise ValueError("Each outbound must be a JSON object")
 
-    if len(vless_outbounds) > 1:
-        vless_tags = [o["tag"] for o in vless_outbounds]
-        derived_outbounds.append(
-            build_urltest("vless-auto", vless_tags, urltest_interval, urltest_tolerance)
-        )
-        selector_candidates.append("vless-auto")
-    if len(hy2_outbounds) > 1:
-        hy2_tags = [o["tag"] for o in hy2_outbounds]
-        derived_outbounds.append(
-            build_urltest("hy2-auto", hy2_tags, urltest_interval, urltest_tolerance)
-        )
-        selector_candidates.append("hy2-auto")
+        outbound = deep_clone(raw_outbound)
+        tag = outbound.get("tag")
+        if tag is None or (isinstance(tag, str) and not tag.strip()):
+            tag = f"proxy-s{index}"
+            outbound["tag"] = tag
+        if not isinstance(tag, str) or not tag.strip():
+            raise ValueError(f"Outbound #{index} must have a string 'tag'")
 
-    if urltest_all and len(protocol_outbounds) > 1:
-        derived_outbounds.append(
-            build_urltest("proxy-auto", protocol_tags, urltest_interval, urltest_tolerance)
-        )
-        selector_candidates.insert(0, "proxy-auto")
+        tags.append(tag)
+        proxy_outbounds.append(outbound)
 
-    selector_candidates.extend(protocol_tags)
-
-    outbounds = protocol_outbounds + derived_outbounds
+    generated = proxy_outbounds + [build_urltest("proxy-auto", tags)]
     if include_selector:
-        outbounds.append(
+        generated.append(
             {
                 "type": "selector",
                 "tag": "proxy",
-                "outbounds": selector_candidates,
-                "default": selector_candidates[0],
+                "outbounds": ["proxy-auto"] + tags,
+                "default": "proxy-auto",
             }
         )
-    return outbounds
+    return generated
 
 
 def outbound_tags(outbounds: list) -> set[str]:
@@ -262,46 +192,15 @@ def set_generated_outbounds(config, generated_outbounds):
     if not isinstance(outbounds, list):
         outbounds = []
 
-    reserved_tags = {"proxy", "proxy-auto", "vless-auto", "hy2-auto"}
-    reserved_types = {"vless", "hysteria2", "urltest", "selector", "anytls"}
     base_outbounds = []
     for outbound in outbounds:
         if not isinstance(outbound, dict):
             continue
-        if outbound.get("tag") in reserved_tags:
-            continue
-        if outbound.get("type") in reserved_types:
+        if outbound.get("tag") in {"proxy", "proxy-auto"}:
             continue
         base_outbounds.append(outbound)
 
     config["outbounds"] = base_outbounds + generated_outbounds
-
-
-def build_populator(params):
-    addr = first(params, "address", "")
-    srv = first(params, "serverName", "")
-    if (not srv) and addr and (not looks_like_ip(addr)):
-        params = dict(params)
-        params["serverName"] = [addr]
-
-    def replace_in_string(s: str) -> str:
-        def repl(m):
-            key = m.group(1)
-            vals = params.get(key)
-            return vals[0] if vals else ""
-
-        return PLACEHOLDER_RE.sub(repl, s)
-
-    def populate(obj):
-        if isinstance(obj, str):
-            return replace_in_string(obj)
-        if isinstance(obj, dict):
-            return {k: populate(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [populate(v) for v in obj]
-        return obj
-
-    return populate
 
 
 def _rule_has_set(rule, target: str) -> bool:
@@ -336,9 +235,6 @@ def maybe_trim_ru_ip_categories(config, no_community: bool, no_re_filter: bool):
         targets.append("geoip-ru-blocked-community")
     if no_re_filter:
         targets.append("geoip-re-filter")
-
-    if not targets:
-        return
 
     route = config.get("route")
     if not isinstance(route, dict):
@@ -418,7 +314,9 @@ def set_inbounds(config, mode: str):
     selected_inbound_tags = {
         inbound.get("tag")
         for inbound in config.get("inbounds", [])
-        if isinstance(inbound, dict) and isinstance(inbound.get("tag"), str) and inbound.get("tag")
+        if isinstance(inbound, dict)
+        and isinstance(inbound.get("tag"), str)
+        and inbound.get("tag")
     }
     trim_route_rules_for_inbounds(config, selected_inbound_tags)
 
@@ -474,37 +372,37 @@ def trim_route_rules_for_inbounds(config, selected_tags: set[str]):
 
 class Handler(BaseHTTPRequestHandler):
     route_path = "/"
-    template = None
+    shortcut_dir = Path("/srv/sing-box-generator")
+    templates = {}
+    meowconnect_url = None
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path != self.route_path:
+        try:
+            params = self.resolve_params(parsed)
+        except FileNotFoundError:
             self.send_error(404, "Not Found")
             return
+        except ValueError as exc:
+            self.send_error(400, str(exc))
+            return
 
-        params = parse_qs(parsed.query, keep_blank_values=True)
+        template_key = "legacy" if is_truthy(first(params, "legacy", None)) else "default"
+        template = self.templates.get(template_key)
+        if template is None:
+            self.send_error(400, "Legacy config template is not configured")
+            return
 
-        cfg = deep_clone(self.template)
-        cfg = build_populator(params)(cfg)
+        cfg = deep_clone(template)
         fixed_outbound = None
         try:
-            vless_raw = parse_json_param(params, "vless", [])
-            hy2_raw = parse_json_param(params, "hy2", [])
-            urltest_interval = (first(params, "interval", "15s") or "15s").strip()
-            if not urltest_interval:
-                raise ValueError("'interval' must be a non-empty string")
-            urltest_tolerance = to_int(first(params, "tolerance", "200"), 200, "tolerance")
-            urltest_all = is_truthy(first(params, "urltest_all", None))
+            outbounds_raw = resolve_outbounds_raw(params, self.meowconnect_url)
             fixed_outbound_raw = first(params, "fixed_outbound", None)
             fixed_outbound = (
                 (fixed_outbound_raw or "").strip() if fixed_outbound_raw is not None else None
             ) or None
             generated_outbounds = build_proxy_outbounds(
-                vless_raw,
-                hy2_raw,
-                urltest_interval,
-                urltest_tolerance,
-                urltest_all=urltest_all,
+                outbounds_raw,
                 include_selector=fixed_outbound is None,
             )
             if fixed_outbound:
@@ -551,6 +449,40 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def resolve_params(self, parsed):
+        request_params = parse_qs(parsed.query, keep_blank_values=True)
+        if parsed.path == self.route_path:
+            return request_params
+
+        shortcut_params = self.load_shortcut_params(parsed.path)
+        shortcut_params.update(request_params)
+        return shortcut_params
+
+    def load_shortcut_params(self, request_path: str):
+        shortcut_path = self.shortcut_path_for(request_path)
+        with shortcut_path.open("r", encoding="utf-8") as f:
+            content = f.read().strip()
+        if content.startswith("?"):
+            content = content[1:]
+        return parse_qs(content, keep_blank_values=True)
+
+    def shortcut_path_for(self, request_path: str):
+        route_prefix = self.route_path.rsplit("/", 1)[0]
+        if not request_path.startswith(route_prefix + "/"):
+            raise FileNotFoundError
+
+        relative = unquote(request_path[len(route_prefix) + 1 :])
+        if not relative or relative.startswith("/") or "\x00" in relative:
+            raise FileNotFoundError
+
+        root = self.shortcut_dir.resolve()
+        candidate = (root / relative).resolve()
+        if root != candidate and root not in candidate.parents:
+            raise FileNotFoundError
+        if not candidate.is_file():
+            raise FileNotFoundError
+        return candidate
+
     def log_message(self, format, *args):
         print(
             "%s - - [%s] %s"
@@ -558,28 +490,40 @@ class Handler(BaseHTTPRequestHandler):
         )
 
 
+def load_json(path: str):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        raise SystemExit(f"Failed to parse JSON {path}: {e}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="sing-box config templating HTTP server")
+    ap.add_argument("--file", required=True, help="Path to base sing-box config (JSON)")
+    ap.add_argument("--legacy-file", help="Path to legacy base sing-box config (JSON)")
     ap.add_argument(
-        "--file",
-        required=True,
-        help="Path to base sing-box config (JSON) with {{placeholders}}",
+        "--shortcut-dir",
+        default="/srv/sing-box-generator",
+        help="Directory with query-string shortcut files (default: /srv/sing-box-generator)",
     )
     ap.add_argument("--path", default="/", help="URL path to serve (default: /)")
     ap.add_argument(
         "--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)"
     )
     ap.add_argument("--port", type=int, default=8080, help="Bind port (default: 8080)")
+    ap.add_argument(
+        "--meowconnect-url",
+        help="URL for cached MeowConnect outbounds (e.g. http://127.0.0.1:18083/outbounds)",
+    )
     args = ap.parse_args()
 
-    try:
-        with open(args.file, "r", encoding="utf-8") as f:
-            template = json.load(f)
-    except Exception as e:
-        raise SystemExit(f"Failed to parse JSON {args.file}: {e}")
-
     Handler.route_path = args.path
-    Handler.template = template
+    Handler.shortcut_dir = Path(args.shortcut_dir)
+    Handler.meowconnect_url = args.meowconnect_url
+    Handler.templates = {"default": load_json(args.file)}
+    if args.legacy_file:
+        Handler.templates["legacy"] = load_json(args.legacy_file)
 
     server = HTTPServer((args.host, args.port), Handler)
     print(f"Serving on http://{args.host}:{args.port}{args.path}")
