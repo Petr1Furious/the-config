@@ -72,7 +72,10 @@ in
 
   systemd.services.sing-box-config-generator = {
     description = "sing-box config templating HTTP server";
-    after = [ "network.target" "meowconnect-outbounds.service" ];
+    after = [
+      "network.target"
+      "meowconnect-outbounds.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --legacy-file ${singBoxCfgBase114} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate --shortcut-dir ${singBoxShortcutDir} --meowconnect-url http://127.0.0.1:${toString meowconnectPort}/outbounds";
@@ -103,6 +106,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${lib.getExe pkgs.curl} -fsS -X POST http://127.0.0.1:${toString meowconnectPort}/refresh";
+      ExecStartPost = "${pkgs.systemd}/bin/systemctl start sing-box-proxy-sync.service";
     };
   };
 
@@ -124,4 +128,8 @@ in
 
   age.secrets.htpasswd = mkNginxSecret "htpasswd";
   age.secrets.meowconnect-env = mkMeowSecret "meowconnect-env";
+
+  backup.locations.sing-box-generator = {
+    from = [ singBoxShortcutDir ];
+  };
 }

@@ -22,7 +22,6 @@ let
     "cleanup-script.age"
     "clipcascade-db-password.age"
     "htpasswd-admin.age"
-    "sing-box-proxy-config.age"
     "grafana-secret-key.age"
     "meowconnect-env.age"
   ];
