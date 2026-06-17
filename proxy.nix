@@ -40,7 +40,7 @@ let
     marker="${singBoxConfigUpdatedMarker}"
     if [[ -f "$marker" ]]; then
       ${pkgs.coreutils}/bin/rm -f "$marker"
-      ${pkgs.systemd}/bin/systemctl restart sing-box.service
+      ${pkgs.systemd}/bin/systemctl --no-block restart sing-box.service
     fi
   '';
 in

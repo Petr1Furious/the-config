@@ -203,13 +203,37 @@ def set_generated_outbounds(config, generated_outbounds):
     config["outbounds"] = base_outbounds + generated_outbounds
 
 
-def _rule_has_set(rule, target: str) -> bool:
-    rs = rule.get("rule_set")
-    if isinstance(rs, list):
-        return any(isinstance(x, str) and x == target for x in rs)
-    if isinstance(rs, str):
-        return rs == target
-    return False
+AD_RULE_SETS = frozenset(
+    {
+        "geosite-category-ads-all",
+        "geosite-adguard-list",
+        "category-ads-all",
+    }
+)
+
+
+def _trim_rules_by_sets(rules, targets: frozenset[str]):
+    if not isinstance(rules, list):
+        return rules
+
+    trimmed_rules = []
+    for rule in rules:
+        rs = rule.get("rule_set")
+        if isinstance(rs, list):
+            new_rs = [x for x in rs if x not in targets]
+            if not new_rs and rs:
+                continue
+            if new_rs != rs:
+                new_rule = dict(rule)
+                new_rule["rule_set"] = new_rs
+                trimmed_rules.append(new_rule)
+            else:
+                trimmed_rules.append(rule)
+        elif isinstance(rs, str) and rs in targets:
+            continue
+        else:
+            trimmed_rules.append(rule)
+    return trimmed_rules
 
 
 def remove_ads_rule(config):
@@ -217,13 +241,13 @@ def remove_ads_rule(config):
     if isinstance(dns, dict):
         rules = dns.get("rules")
         if isinstance(rules, list):
-            dns["rules"] = [r for r in rules if not _rule_has_set(r, "category-ads-all")]
+            dns["rules"] = _trim_rules_by_sets(rules, AD_RULE_SETS)
 
     route = config.get("route")
     if isinstance(route, dict):
         rules = route.get("rules")
         if isinstance(rules, list):
-            route["rules"] = [r for r in rules if not _rule_has_set(r, "category-ads-all")]
+            route["rules"] = _trim_rules_by_sets(rules, AD_RULE_SETS)
 
 
 def maybe_trim_ru_ip_categories(config, no_community: bool, no_re_filter: bool):
