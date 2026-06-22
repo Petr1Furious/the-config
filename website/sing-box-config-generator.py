@@ -250,6 +250,59 @@ def remove_ads_rule(config):
             route["rules"] = _trim_rules_by_sets(rules, AD_RULE_SETS)
 
 
+def remove_redundant_final_route_rules(config, route_final: str):
+    route = config.get("route")
+    if not isinstance(route, dict):
+        return
+    rules = route.get("rules")
+    if not isinstance(rules, list):
+        return
+
+    route["rules"] = [
+        rule
+        for rule in rules
+        if not (isinstance(rule, dict) and rule.get("outbound") == route_final)
+    ]
+
+
+def collect_rule_set_refs(config) -> set[str]:
+    refs: set[str] = set()
+    for section in ("dns", "route"):
+        sect = config.get(section)
+        if not isinstance(sect, dict):
+            continue
+        rules = sect.get("rules")
+        if not isinstance(rules, list):
+            continue
+        for rule in rules:
+            if not isinstance(rule, dict):
+                continue
+            rs = rule.get("rule_set")
+            if isinstance(rs, str):
+                refs.add(rs)
+            elif isinstance(rs, list):
+                refs.update(x for x in rs if isinstance(x, str))
+    return refs
+
+
+def prune_unused_rule_sets(config):
+    route = config.get("route")
+    if not isinstance(route, dict):
+        return
+    definitions = route.get("rule_set")
+    if not isinstance(definitions, list):
+        return
+
+    used = collect_rule_set_refs(config)
+    route["rule_set"] = [
+        entry
+        for entry in definitions
+        if isinstance(entry, dict)
+        and isinstance(entry.get("tag"), str)
+        and entry["tag"] in used
+    ]
+
+
 def maybe_trim_ru_ip_categories(config, no_community: bool, no_re_filter: bool):
     if not (no_community or no_re_filter):
         return
@@ -464,6 +517,11 @@ class Handler(BaseHTTPRequestHandler):
         no_comm = is_truthy(first(params, "no_ru_blocked_community", None))
         no_ref = is_truthy(first(params, "no_re_filter", None))
         maybe_trim_ru_ip_categories(cfg, no_comm, no_ref)
+
+        if primary == "proxy":
+            remove_redundant_final_route_rules(cfg, route_final)
+
+        prune_unused_rule_sets(cfg)
 
         body = json.dumps(cfg, indent=4, ensure_ascii=False).encode("utf-8")
         self.send_response(200)

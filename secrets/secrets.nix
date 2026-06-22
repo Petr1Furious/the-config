@@ -20,7 +20,6 @@ let
     "pterodactyl-panel-env.age"
     "pterodactyl-db-env.age"
     "cleanup-script.age"
-    "clipcascade-db-password.age"
     "htpasswd-admin.age"
     "grafana-secret-key.age"
     "meowconnect-env.age"
