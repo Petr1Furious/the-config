@@ -27,17 +27,9 @@
       type = "rclone";
       path = "yandex:/backups";
     };
-    yandex-minecraft = {
-      type = "rclone";
-      path = "yandex:/minecraft-backups";
-    };
     local = {
       type = "local";
       path = "/mnt/data/backups";
-    };
-    local-minecraft = {
-      type = "local";
-      path = "/mnt/data/minecraft-backups";
     };
   };
 

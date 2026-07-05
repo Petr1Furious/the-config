@@ -12,10 +12,6 @@ let
   export_docker_host = "export DOCKER_HOST=unix:///run/user/${toString config.users.users.minecraft.uid}/docker.sock";
 
   make-minecraft-backups = container_names: {
-    to = [
-      "local-minecraft"
-      "yandex-minecraft"
-    ];
     hooks = {
       prevalidate = [
         (
@@ -88,8 +84,8 @@ in
   };
 
   backup.locations = {
-    mpsmp-26 = make-minecraft-backups [ "mpsmp_26" ] // {
-      from = [ "/home/minecraft/mpsmp-26" ];
+    mpsmp-summer-2026 = make-minecraft-backups [ "mpsmp-summer-2026" ] // {
+      from = [ "/home/minecraft/mpsmp-summer-2026" ];
       cron = "30 * * * *";
     };
     minigames =
@@ -101,14 +97,9 @@ in
         from = [ "/home/minecraft/minigames" ];
         cron = "0 8 * * *";
       };
-    potato-smp = make-minecraft-backups [ "potato-smp" ] // {
-      from = [ "/home/minecraft/potato-smp" ];
-      cron = "0 * * * *";
-    };
   }
   // make-launcher-backups [
     "potato-launcher"
-    "hse-launcher"
   ];
 
   caddy.proxies = [
@@ -134,24 +125,7 @@ in
     }
     {
       host = "hseminecraft.ru";
-      target = "http://127.0.0.1:8002";
+      target = "http://127.0.0.1:8001";
     }
   ];
-
-  services.prometheus.scrapeConfigs = [
-    {
-      job_name = "mpsmp-26";
-      static_configs = [
-        {
-          targets = [ "localhost:${prometheusExporterPort}" ];
-        }
-      ];
-    }
-  ];
-
-  environment.etc."grafana-dashboards/mpsmp-26.json" = {
-    source = ./grafana-dashboards/mpsmp-26.json;
-    user = "grafana";
-    group = "grafana";
-  };
 }
