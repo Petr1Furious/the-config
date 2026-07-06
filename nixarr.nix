@@ -22,7 +22,17 @@ in
     radarr.enable = true;
     sonarr.enable = true;
     prowlarr.enable = true;
-    transmission.enable = true;
+    transmission = {
+      enable = true;
+
+      extraSettings = {
+        ratio-limit-enabled = true;
+        ratio-limit = 1;
+
+        idle-seeding-limit-enabled = true;
+        idle-seeding-limit = 1440;
+      };
+    };
 
     mediaDir = "/srv/media";
     stateDir = "/srv/media/.state/nixarr";
