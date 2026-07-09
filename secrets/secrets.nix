@@ -23,6 +23,7 @@ let
     "htpasswd-admin.age"
     "grafana-secret-key.age"
     "meowconnect-env.age"
+    "backblaze-b2-autorestic-env.age"
   ];
 in
 builtins.listToAttrs (

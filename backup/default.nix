@@ -16,6 +16,7 @@
   backup.defaultTo = [
     "local"
     "yandex"
+    "backblaze-b2"
   ];
 
   backup.global.options.all = {
@@ -26,6 +27,11 @@
     yandex = {
       type = "rclone";
       path = "yandex:/backups";
+    };
+    backblaze-b2 = {
+      type = "s3";
+      path = "s3.eu-central-003.backblazeb2.com/potato-backups631/potato-server/restic";
+      environmentFilePath = config.age.secrets.backblaze-b2-autorestic-env.path;
     };
     local = {
       type = "local";
@@ -66,6 +72,9 @@
     };
     rclone-config = {
       file = ../secrets/rclone-config.age;
+    };
+    backblaze-b2-autorestic-env = {
+      file = ../secrets/backblaze-b2-autorestic-env.age;
     };
     cleanup-script = {
       file = ../secrets/cleanup-script.age;

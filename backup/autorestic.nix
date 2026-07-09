@@ -140,6 +140,16 @@ in
               type = types.str;
               description = "Backend path (e.g., backend:/backups or /mnt/disk/backup)";
             };
+            environmentFilePath = mkOption {
+              type = types.nullOr types.path;
+              default = null;
+              description = ''
+                Optional systemd EnvironmentFile for backend credentials. Use
+                AUTORESTIC_<BACKEND>_<NAME> variables, for example
+                AUTORESTIC_BACKBLAZE_B2_AWS_ACCESS_KEY_ID for an s3 backend
+                named backblaze-b2.
+              '';
+            };
           };
         }
       );
@@ -353,6 +363,12 @@ in
         }
         // perBackendEnv;
 
+      backendEnvironmentFiles = lib.unique (
+        lib.filter (p: p != null) (
+          map (name: cfg.backends.${name}.environmentFilePath) (lib.attrNames cfg.backends)
+        )
+      );
+
       autoresticLocalLock = "${autoresticDir}/.autorestic.lock.yml";
 
       cleanLocalLock = pkgs.writeShellScript "autorestic-clean-local-lock" ''
@@ -457,6 +473,9 @@ in
           IOSchedulingClass = "idle";
           IOPriority = 7;
           OOMScoreAdjust = 500;
+        }
+        // lib.optionalAttrs (backendEnvironmentFiles != [ ]) {
+          EnvironmentFile = backendEnvironmentFiles;
         };
         path = [
           pkgs.restic
@@ -493,6 +512,9 @@ in
             "${cleanLocalLock}"
           ]
           ++ lib.optionals (ensureRcloneConfig != null) [ "${ensureRcloneConfig}" ];
+        }
+        // lib.optionalAttrs (backendEnvironmentFiles != [ ]) {
+          EnvironmentFile = backendEnvironmentFiles;
         };
         path = [
           pkgs.autorestic
@@ -540,6 +562,9 @@ in
             "${cleanLocalLock}"
           ]
           ++ lib.optionals (ensureRcloneConfig != null) [ "${ensureRcloneConfig}" ];
+        }
+        // lib.optionalAttrs (backendEnvironmentFiles != [ ]) {
+          EnvironmentFile = backendEnvironmentFiles;
         };
         path = [
           pkgs.autorestic
