@@ -70,6 +70,7 @@
     peco
     bmon
     restic
+    autorestic
     iotop
     pciutils
     ncdu

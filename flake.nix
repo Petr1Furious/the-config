@@ -20,10 +20,14 @@
       url = "github:rasmus-kirk/nixarr";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
       nixpkgs-unstable,
@@ -31,6 +35,7 @@
       home-manager,
       vscode-server,
       nixarr,
+      disko,
     }:
     let
       system = "x86_64-linux";
@@ -38,40 +43,45 @@
         inherit system;
         config.allowUnfree = true;
       };
+      # Arguments handed to every host's modules. `secrets` is the agenix
+      # secrets directory as a path, so modules reference secrets by name
+      # (secrets + "/foo.age") regardless of where they live in the tree.
+      specialArgs = {
+        inherit inputs;
+        pkgs-unstable = pkgsUnstable;
+        secrets = ./secrets;
+      };
     in
     {
-      nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem {
-        inherit system;
+      # Home box: NVIDIA + virtualisation. (agenix comes from modules/common/base.nix;
+      # input-coupled service modules self-import their flake module.)
+      nixosConfigurations.home-server = nixpkgs.lib.nixosSystem {
+        inherit system specialArgs;
         modules = [
-          {
-            nixpkgs.overlays = [
-              (_final: prev: {
-                jellyfin = pkgsUnstable.jellyfin;
-              })
-            ];
-          }
-          ./configuration.nix
-          agenix.nixosModules.default
-          {
-            environment.systemPackages = [ agenix.packages.${system}.default ];
-          }
+          ./hosts/home-server
           home-manager.nixosModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.petrtsopa = ./home;
           }
-          vscode-server.nixosModules.default
-          nixarr.nixosModules.default
         ];
-        specialArgs = {
-          pkgs-unstable = import nixpkgs-unstable {
-            inherit system;
-            config = {
-              allowUnfree = true;
-            };
-          };
-        };
+      };
+
+      # OVH box: the service stack, reached from Russia via the Selectel relay
+      # (see hosts/potato-server/relay.nix).
+      nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem {
+        inherit system specialArgs;
+        modules = [
+          ./hosts/potato-server
+          disko.nixosModules.disko
+          home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.petrtsopa = ./home;
+          }
+        ];
       };
     };
 }

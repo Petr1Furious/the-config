@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 {
@@ -14,7 +15,6 @@
   backup.passwordFilePath = config.age.secrets.restic-key.path;
 
   backup.defaultTo = [
-    "local"
     "yandex"
     "backblaze-b2"
   ];
@@ -32,10 +32,6 @@
       type = "s3";
       path = "s3.eu-central-003.backblazeb2.com/potato-backups631/potato-server/restic";
       environmentFilePath = config.age.secrets.backblaze-b2-autorestic-env.path;
-    };
-    local = {
-      type = "local";
-      path = "/mnt/data/backups";
     };
   };
 
@@ -68,16 +64,16 @@
 
   age.secrets = {
     restic-key = {
-      file = ../secrets/restic-key.age;
+      file = secrets + "/restic-key.age";
     };
     rclone-config = {
-      file = ../secrets/rclone-config.age;
+      file = secrets + "/rclone-config.age";
     };
     backblaze-b2-autorestic-env = {
-      file = ../secrets/backblaze-b2-autorestic-env.age;
+      file = secrets + "/backblaze-b2-autorestic-env.age";
     };
     cleanup-script = {
-      file = ../secrets/cleanup-script.age;
+      file = secrets + "/cleanup-script.age";
     };
   };
 }

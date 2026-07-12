@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 
@@ -160,9 +161,9 @@ in
   };
 
   age.secrets.pterodactyl-db-env = {
-    file = ../../../secrets/pterodactyl-db-env.age;
+    file = secrets + "/pterodactyl-db-env.age";
   };
   age.secrets.pterodactyl-panel-env = {
-    file = ../../../secrets/pterodactyl-panel-env.age;
+    file = secrets + "/pterodactyl-panel-env.age";
   };
 }

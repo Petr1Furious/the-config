@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 
@@ -36,6 +37,6 @@ in
   };
 
   age.secrets.vaultwarden-admin-token = {
-    file = ./secrets/vaultwarden-admin-token.age;
+    file = secrets + "/vaultwarden-admin-token.age";
   };
 }

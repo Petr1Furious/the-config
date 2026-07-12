@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -15,6 +16,8 @@ let
   };
 in
 {
+  imports = [ inputs.nixarr.nixosModules.default ];
+
   nixarr = {
     enable = true;
 
@@ -51,10 +54,10 @@ in
   };
 
   systemd.services = {
-    radarr.environment = proxyEnv;
-    sonarr.environment = proxyEnv;
-    prowlarr.environment = proxyEnv;
-    # transmission.environment = proxyEnv;
+    # radarr.environment = proxyEnv;
+    # sonarr.environment = proxyEnv;
+    # prowlarr.environment = proxyEnv;
+    transmission.environment = proxyEnv;
   };
 
   backup.locations.nixarr = {

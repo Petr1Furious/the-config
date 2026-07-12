@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 
@@ -76,7 +77,7 @@ in
   };
 
   age.secrets.nextcloud-admin-password = {
-    file = ./secrets/nextcloud-admin-password.age;
+    file = secrets + "/nextcloud-admin-password.age";
     mode = "440";
     owner = "nextcloud";
     group = "nextcloud";

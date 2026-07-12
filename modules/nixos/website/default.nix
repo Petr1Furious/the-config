@@ -2,12 +2,13 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 
 let
   mkNginxSecret = file: {
-    file = ../secrets/${file}.age;
+    file = secrets + "/${file}.age";
     mode = "440";
     owner = "nginx";
     group = "nginx";
@@ -26,7 +27,7 @@ let
   meowconnectUser = "meowconnect";
 
   mkMeowSecret = file: {
-    file = ../secrets/${file}.age;
+    file = secrets + "/${file}.age";
     mode = "0400";
     owner = meowconnectUser;
     group = meowconnectUser;

@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secrets,
   ...
 }:
 
@@ -81,7 +82,7 @@ in
   ];
 
   age.secrets.grafana-secret-key = {
-    file = ../secrets/grafana-secret-key.age;
+    file = secrets + "/grafana-secret-key.age";
     mode = "440";
     owner = "grafana";
     group = "grafana";

@@ -8,8 +8,8 @@
 {
   imports = [
     ./services/tgauth
-    ./services/overleaf
-    ./services/pterodactyl
+    # ./services/overleaf
+    # ./services/pterodactyl
   ];
 
   options = with lib; {

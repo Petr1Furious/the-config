@@ -471,7 +471,6 @@ in
           CPUWeight = 1;
           IOWeight = 1;
           IOSchedulingClass = "idle";
-          IOPriority = 7;
           OOMScoreAdjust = 500;
         }
         // lib.optionalAttrs (backendEnvironmentFiles != [ ]) {
@@ -506,7 +505,6 @@ in
           CPUWeight = 1;
           IOWeight = 1;
           IOSchedulingClass = "idle";
-          IOPriority = 7;
           OOMScoreAdjust = 500;
           ExecStartPre = [
             "${cleanLocalLock}"
@@ -556,7 +554,6 @@ in
           CPUWeight = 1;
           IOWeight = 1;
           IOSchedulingClass = "idle";
-          IOPriority = 7;
           OOMScoreAdjust = 500;
           ExecStartPre = [
             "${cleanLocalLock}"

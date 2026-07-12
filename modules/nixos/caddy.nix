@@ -50,14 +50,20 @@
       systemd.services.caddy = {
         after = [ "docker.service" ];
         requires = [ "docker.service" ];
-        serviceConfig.ExecStart = lib.mkForce [
-          ""
-          "${lib.getExe config.services.caddy.package} docker-proxy --caddyfile-path ${config.services.caddy.configFile}"
-        ];
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = lib.mkForce [
+            ""
+            "${lib.getExe config.services.caddy.package} docker-proxy --caddyfile-path ${config.services.caddy.configFile}"
+          ];
+        };
       };
 
       networking.firewall.allowedTCPPorts = [
         80
+        443
+      ];
+      networking.firewall.allowedUDPPorts = [
         443
       ];
     };
