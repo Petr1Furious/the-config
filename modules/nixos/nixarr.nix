@@ -18,6 +18,8 @@ in
 {
   imports = [ inputs.nixarr.nixosModules.default ];
 
+  services.flaresolverr.enable = true;
+
   nixarr = {
     enable = true;
 
