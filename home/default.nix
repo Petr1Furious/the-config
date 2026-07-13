@@ -1,11 +1,16 @@
 {
   config,
-  lib,
   pkgs,
   ...
 }:
 
 {
+  imports = [
+    ./linux.nix
+    ./shell.nix
+    ./tmux.nix
+  ];
+
   home.stateVersion = "24.11";
   programs.home-manager.enable = true;
   xdg.enable = true;
@@ -37,15 +42,6 @@
         src = ./p10k;
         file = "p10k.zsh";
       }
-      {
-        name = "zsh-peco-history";
-        src = pkgs.fetchFromGitHub {
-          owner = "jimeh";
-          repo = "zsh-peco-history";
-          rev = "73615968d46cf172931946b00f89a59da0c124a5";
-          hash = "sha256-lEgisjuLrnetIUG0fXl9vH3/ZHgpyQviy7rJazCkMTs=";
-        };
-      }
     ];
 
     oh-my-zsh = {
@@ -55,34 +51,39 @@
         "sudo"
       ];
     };
-
-    initContent = lib.mkAfter ''
-      export LIBVIRT_DEFAULT_URI="qemu:///system"
-    '';
   };
 
   home.packages = with pkgs; [
     nixfmt
     tealdeer
-    gcc
     manix
     whois
-    peco
     bmon
     restic
     autorestic
-    iotop
-    pciutils
     ncdu
     zip
     unzip
     nodejs_24
-    tmux
     ripgrep
+    htop
+    btop
+    jq
+    rclone
+    git-lfs
+    fd
+    uv
+    wget
+  ];
+
+  home.sessionPath = [
+    "$HOME/.cargo/bin"
+    "$HOME/.local/bin"
   ];
 
   programs.git = {
     enable = true;
+    settings.core.editor = "vim";
     settings.user = {
       name = "Petr Tsopa";
       email = "petrtsopa03@gmail.com";

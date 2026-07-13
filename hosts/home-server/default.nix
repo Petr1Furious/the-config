@@ -10,7 +10,7 @@
   imports = [
     ./hardware-configuration.nix
     ./mounts.nix
-    ../../modules/common/base.nix
+    ../../modules/nixos/base.nix
     ../../modules/nixos/qemu
     ../../modules/nixos/openrgb
     ../../modules/nixos/ollama.nix

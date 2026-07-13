@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   inputs,
@@ -7,14 +6,10 @@
 }:
 
 {
-  imports = [ inputs.agenix.nixosModules.default ];
-
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
+  imports = [
+    ../common/nix.nix
+    inputs.agenix.nixosModules.default
   ];
-
-  nixpkgs.config.allowUnfree = true;
 
   i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
 
@@ -38,8 +33,6 @@
 
   environment.systemPackages = with pkgs; [
     vim
-    wget
-    htop
     git
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];

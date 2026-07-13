@@ -12,7 +12,7 @@
     ./hardware-configuration.nix
     ./disk-config.nix
     ./relay.nix
-    ../../modules/common/base.nix
+    ../../modules/nixos/base.nix
     ../../modules/nixos/backup
     ../../modules/nixos/compositor
     ../../modules/nixos/postgres.nix
