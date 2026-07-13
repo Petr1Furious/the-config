@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -8,11 +9,6 @@ let
   eza = lib.getExe pkgs.eza;
 in
 {
-  home.sessionVariables = {
-    EDITOR = "vim";
-    VISUAL = "$EDITOR";
-  };
-
   home.packages = with pkgs; [
     nix-tree
   ];
@@ -25,18 +21,63 @@ in
 
   programs.bat.enable = true;
 
-  programs.delta = {
-    enable = true;
-    enableGitIntegration = true;
-  };
-
   programs.eza.enable = true;
 
   programs.zoxide.enable = true;
 
   programs.zsh = {
+    enable = true;
+    dotDir = "${config.xdg.configHome}/zsh";
+
     autocd = true;
     enableCompletion = true;
+    syntaxHighlighting.enable = true;
+    autosuggestion.enable = true;
+    history = {
+      path = "${config.xdg.dataHome}/zsh/history";
+      extended = true;
+    };
+
+    plugins =
+      (builtins.map
+        (name: {
+          name = "omz-lib-${name}";
+          src = pkgs.oh-my-zsh;
+          file = "share/oh-my-zsh/lib/${name}.zsh";
+        })
+        [
+          "clipboard"
+          "compfix"
+          "completion"
+          "git"
+          "history"
+          "key-bindings"
+          "termsupport"
+        ]
+      )
+      ++ (builtins.map
+        (name: {
+          name = "omz-plugin-${name}";
+          src = pkgs.oh-my-zsh;
+          file = "share/oh-my-zsh/plugins/${name}/${name}.plugin.zsh";
+        })
+        [
+          "git"
+          "sudo"
+        ]
+      )
+      ++ [
+        {
+          name = "powerlevel10k";
+          src = pkgs.zsh-powerlevel10k;
+          file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+        }
+        {
+          name = "powerlevel10k-config";
+          src = ./p10k;
+          file = "p10k.zsh";
+        }
+      ];
 
     shellAliases = {
       e = "$EDITOR";
