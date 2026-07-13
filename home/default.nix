@@ -41,6 +41,7 @@
     fd
     uv
     wget
+    claude-code
   ];
 
   home.sessionPath = [
