@@ -38,46 +38,52 @@ in
       extended = true;
     };
 
-    plugins =
-      (builtins.map
-        (name: {
-          name = "omz-lib-${name}";
-          src = pkgs.oh-my-zsh;
-          file = "share/oh-my-zsh/lib/${name}.zsh";
-        })
-        [
-          "clipboard"
-          "compfix"
-          "completion"
-          "git"
-          "history"
-          "key-bindings"
-          "termsupport"
-        ]
-      )
-      ++ (builtins.map
-        (name: {
-          name = "omz-plugin-${name}";
-          src = pkgs.oh-my-zsh;
-          file = "share/oh-my-zsh/plugins/${name}/${name}.plugin.zsh";
-        })
-        [
-          "git"
-          "sudo"
-        ]
-      )
-      ++ [
-        {
-          name = "powerlevel10k";
-          src = pkgs.zsh-powerlevel10k;
-          file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-        }
-        {
-          name = "powerlevel10k-config";
-          src = ./p10k;
-          file = "p10k.zsh";
-        }
-      ];
+    plugins = [
+      {
+        name = "omz-urlfunctions";
+        src = ./omz-urlfunctions;
+        file = "omz-urlfunctions.zsh";
+      }
+    ]
+    ++ (builtins.map
+      (name: {
+        name = "omz-lib-${name}";
+        src = pkgs.oh-my-zsh;
+        file = "share/oh-my-zsh/lib/${name}.zsh";
+      })
+      [
+        "clipboard"
+        "compfix"
+        "completion"
+        "git"
+        "history"
+        "key-bindings"
+        "termsupport"
+      ]
+    )
+    ++ (builtins.map
+      (name: {
+        name = "omz-plugin-${name}";
+        src = pkgs.oh-my-zsh;
+        file = "share/oh-my-zsh/plugins/${name}/${name}.plugin.zsh";
+      })
+      [
+        "git"
+        "sudo"
+      ]
+    )
+    ++ [
+      {
+        name = "powerlevel10k";
+        src = pkgs.zsh-powerlevel10k;
+        file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+      }
+      {
+        name = "powerlevel10k-config";
+        src = ./p10k;
+        file = "p10k.zsh";
+      }
+    ];
 
     shellAliases = {
       e = "$EDITOR";

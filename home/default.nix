@@ -5,6 +5,7 @@
 
 {
   imports = [
+    ./darwin.nix
     ./editor.nix
     ./git.nix
     ./linux.nix
