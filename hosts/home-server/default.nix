@@ -13,7 +13,7 @@
     ../../modules/nixos/base.nix
     ../../modules/nixos/qemu
     ../../modules/nixos/openrgb
-    ../../modules/nixos/ollama.nix
+    # ../../modules/nixos/ollama.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -30,7 +30,6 @@
 
   boot = {
     kernel.sysctl = {
-      "kernel.yama.ptrace_scope" = 2;
       "vm.compaction_proactiveness" = 0;
     };
     kernelModules = [
