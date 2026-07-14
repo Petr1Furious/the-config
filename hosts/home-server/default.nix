@@ -14,7 +14,6 @@
     ../../modules/nixos/qemu
     ../../modules/nixos/openrgb
     ../../modules/nixos/ollama.nix
-    ../../modules/nixos/vscode-server.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

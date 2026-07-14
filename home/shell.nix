@@ -85,15 +85,28 @@ in
       }
     ];
 
-    shellAliases = {
-      e = "$EDITOR";
-      se = "sudoedit";
-      ls = "${eza} --group-directories-first --icons=auto";
-      ll = "${eza} -lah --group-directories-first --icons=auto";
-      la = "${eza} -a --group-directories-first --icons=auto";
-      lt = "${eza} --tree --level=2 --group-directories-first --icons=auto";
-      dco = "docker compose";
-    };
+    shellAliases =
+      let
+        ls = "${eza} --group-directories-first -ag --icons always";
+        ll = "${ls} -l";
+        lt = "${ls} --tree --level=2";
+      in
+      {
+        e = "$EDITOR";
+        se = "sudoedit";
+        ls = ls;
+        ll = ll;
+        lt = lt;
+        sls = "sudo ${ls}";
+        sll = "sudo ${ll}";
+        slt = "sudo ${lt}";
+        dco = "docker compose";
+        gst = "git status";
+        gco = "git checkout";
+        gcm = "git commit -m";
+        gcma = "git commit -am";
+        gpl = "git pull";
+      };
 
     shellGlobalAliases = {
       "..." = "../..";

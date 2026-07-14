@@ -28,7 +28,6 @@
     ../../modules/nixos/nextcloud.nix
     ../../modules/nixos/vaultwarden.nix
     ../../modules/nixos/caddy.nix
-    ../../modules/nixos/vscode-server.nix
   ];
 
   networking.hostName = "potato-server";
