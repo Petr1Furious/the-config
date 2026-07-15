@@ -5,9 +5,10 @@
 }:
 
 lib.mkIf pkgs.stdenv.isDarwin {
-  home.packages = [
-    (pkgs.writeShellScriptBin "timeout" ''
-      exec ${pkgs.coreutils}/bin/timeout "$@"
+  home.packages = with pkgs; [
+    (writeShellScriptBin "timeout" ''
+      exec ${coreutils}/bin/timeout "$@"
     '')
+    rsync
   ];
 }
