@@ -51,6 +51,15 @@ in
       description = "Directory for persistent restic cache";
     };
 
+    pruneLockWaitSeconds = mkOption {
+      type = types.int;
+      default = 7200;
+      description = ''
+        How long the weekly prune waits to acquire the shared autorestic lock
+        while a cron backup is in progress, before giving up and failing.
+      '';
+    };
+
     global = mkOption {
       description = "Global Autorestic settings";
       type = types.submodule {
@@ -371,6 +380,9 @@ in
 
       autoresticLocalLock = "${autoresticDir}/.autorestic.lock.yml";
 
+      autoresticFlock = "${autoresticDir}/.autorestic.flock";
+      flock = lib.getExe' pkgs.util-linux "flock";
+
       cleanLocalLock = pkgs.writeShellScript "autorestic-clean-local-lock" ''
         set -euo pipefail
         LOCK="${autoresticLocalLock}"
@@ -447,6 +459,8 @@ in
       systemd.tmpfiles.rules = [
         "d ${builtins.dirOf cfg.autoresticYamlPath} 0750 root root -"
         "L+ ${cfg.autoresticYamlPath} - - - - ${autoresticFile}"
+
+        "r! ${autoresticLocalLock}"
       ]
       ++ lib.optionals (cfg.cacheDir != null) [
         "d ${cfg.cacheDir} 0700 root root -"
@@ -522,10 +536,14 @@ in
           pkgs.bash
           pkgs.procps
           pkgs.gnugrep
+          pkgs.util-linux
         ];
         environment = env;
         script = ''
-          ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci cron --lean
+          # -n: don't block.
+          # -E 0: if the lock is held, skip this run and exit 0 instead of failing.
+          exec ${flock} -n -E 0 ${autoresticFlock} \
+            ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci cron --lean
         '';
       };
 
@@ -549,6 +567,7 @@ in
         wants = [ "network-online.target" ];
         serviceConfig = {
           Type = "oneshot";
+          TimeoutStartSec = cfg.pruneLockWaitSeconds + 4 * 60 * 60;
           Nice = 19;
           CPUSchedulingPolicy = "idle";
           CPUWeight = 1;
@@ -571,10 +590,19 @@ in
           pkgs.bash
           pkgs.procps
           pkgs.gnugrep
+          pkgs.util-linux
         ];
         environment = env;
         script = ''
-          ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci forget -a --prune -- --retry-lock=1h
+          # -w waits up to pruneLockWaitSeconds for an in-progress cron backup
+          exec ${flock} -w ${toString cfg.pruneLockWaitSeconds} ${autoresticFlock} ${pkgs.writeShellScript "autorestic-prune-locked" ''
+            set -uo pipefail
+
+            # restic 'unlock' without --remove-all only clears stale locks
+            ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci exec -a -- unlock
+
+            ${lib.getExe pkgs.autorestic} -c ${cfg.autoresticYamlPath} --ci forget -a --prune
+          ''}
         '';
       };
 
