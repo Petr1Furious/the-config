@@ -19,6 +19,7 @@
       terminal = "tmux-256color";
       plugins = [ pkgs.tmuxPlugins.sensible ];
       extraConfig = ''
+        set -s set-clipboard on
         set -g renumber-windows on
         setw -g pane-base-index 1
       '';
