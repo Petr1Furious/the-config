@@ -37,6 +37,7 @@
   environment.systemPackages = with pkgs; [
     vim
     git
+    ghostty.terminfo
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 

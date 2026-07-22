@@ -69,11 +69,14 @@
     };
 
     casks = [
-      "docker-desktop"
       "google-chrome"
       "iterm2"
       "visual-studio-code"
       "notunes"
+      "raycast"
+      "iina"
+      "orbstack"
+      "bettertouchtool"
     ];
   };
 
