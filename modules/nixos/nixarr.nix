@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -56,9 +54,11 @@ in
   };
 
   systemd.services = {
-    # radarr.environment = proxyEnv;
-    # sonarr.environment = proxyEnv;
-    # prowlarr.environment = proxyEnv;
+    prowlarr = {
+      after = [ "sing-box.service" ];
+      wants = [ "sing-box.service" ];
+    };
+
     transmission.environment = proxyEnv;
   };
 
