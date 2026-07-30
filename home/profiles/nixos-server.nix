@@ -8,7 +8,6 @@
 
   home.packages = with pkgs; [
     autorestic
-    nodejs_24
     rclone
     restic
   ];

@@ -18,13 +18,55 @@ let
   singBoxCfgBase = ./sing-box-config-base.json;
   singBoxCfgBase114 = ./sing-box-config-base-1.11.4.json;
   singBoxCfgGenerator = ./sing-box-config-generator.py;
-  singBoxShortcutDir = "/srv/sing-box-generator";
-  singBoxGeneratorUser = "sing-box-generator";
 
-  meowconnectPort = 18083;
   websiteRoot = ./.;
   meowconnectStateDir = "/var/lib/meowconnect";
   meowconnectUser = "meowconnect";
+
+  allExceptRu = {
+    routing = "all-except-ru";
+  };
+  allExceptRuLegacy = allExceptRu // {
+    legacy = true;
+  };
+  blocked = {
+    routing = "blocked";
+  };
+  blockedLegacy = blocked // {
+    legacy = true;
+  };
+  ruOnly = {
+    routing = "ru-only";
+  };
+  ruOnlyLegacy = ruOnly // {
+    legacy = true;
+  };
+  serverProxy = allExceptRu // {
+    inbound = "proxy";
+    proxy_public = true;
+  };
+  singBoxShortcuts = {
+    "all-except-ru.json" = allExceptRu;
+    "all.json" = allExceptRu;
+    "simple-all.json" = allExceptRu;
+    "sing-box-proxy-all-except-ru.json" = allExceptRu;
+
+    "all-except-ru-legacy.json" = allExceptRuLegacy;
+    "all-legacy.json" = allExceptRuLegacy;
+    "simple-all-legacy.json" = allExceptRuLegacy;
+
+    "blocked.json" = blocked;
+    "simple-blocked.json" = blocked;
+    "sing-box-proxy-blocked.json" = blocked;
+
+    "blocked-legacy.json" = blockedLegacy;
+    "simple-blocked-legacy.json" = blockedLegacy;
+
+    "ru-only.json" = ruOnly;
+    "ru-only-legacy.json" = ruOnlyLegacy;
+    "server-proxy.json" = serverProxy;
+  };
+  singBoxShortcutsFile = pkgs.writeText "sing-box-shortcuts.json" (builtins.toJSON singBoxShortcuts);
 
   mkMeowSecret = file: {
     file = secrets + "/${file}.age";
@@ -54,12 +96,6 @@ in
     };
   };
 
-  users.groups.${singBoxGeneratorUser} = { };
-  users.users.${singBoxGeneratorUser} = {
-    isSystemUser = true;
-    group = singBoxGeneratorUser;
-  };
-
   users.groups.${meowconnectUser} = { };
   users.users.${meowconnectUser} = {
     isSystemUser = true;
@@ -67,31 +103,15 @@ in
   };
 
   systemd.tmpfiles.rules = [
-    "d ${singBoxShortcutDir} 0750 ${singBoxGeneratorUser} ${singBoxGeneratorUser} -"
     "d ${meowconnectStateDir} 0750 ${meowconnectUser} ${meowconnectUser} -"
   ];
 
   systemd.services.sing-box-config-generator = {
     description = "sing-box config templating HTTP server";
-    after = [
-      "network.target"
-      "meowconnect-outbounds.service"
-    ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --legacy-file ${singBoxCfgBase114} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate --shortcut-dir ${singBoxShortcutDir} --meowconnect-url http://127.0.0.1:${toString meowconnectPort}/outbounds";
-      Restart = "on-failure";
-      User = singBoxGeneratorUser;
-      Group = singBoxGeneratorUser;
-    };
-  };
-
-  systemd.services.meowconnect-outbounds = {
-    description = "MeowConnect outbound cache HTTP server";
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} -m meowconnect.server --state-dir ${meowconnectStateDir} --host 127.0.0.1 --port ${toString meowconnectPort} --refresh-on-start";
+      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --legacy-file ${singBoxCfgBase114} --shortcuts-file ${singBoxShortcutsFile} --state-dir ${meowconnectStateDir} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate";
       Environment = "PYTHONPATH=${websiteRoot}";
       WorkingDirectory = "${websiteRoot}";
       EnvironmentFile = config.age.secrets.meowconnect-env.path;
@@ -101,17 +121,18 @@ in
     };
   };
 
-  systemd.services.meowconnect-outbounds-refresh = {
-    description = "Refresh MeowConnect outbound cache";
-    after = [ "meowconnect-outbounds.service" ];
+  systemd.services.sing-box-config-generator-refresh = {
+    description = "Refresh raw MeowConnect responses";
+    after = [ "sing-box-config-generator.service" ];
+    requires = [ "sing-box-config-generator.service" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${lib.getExe pkgs.curl} -fsS -X POST http://127.0.0.1:${toString meowconnectPort}/refresh";
+      ExecStart = "${lib.getExe pkgs.curl} -fsS -X POST http://127.0.0.1:${toString singBoxGeneratorPort}/sing-box-refresh/";
       ExecStartPost = "${pkgs.systemd}/bin/systemctl start sing-box-proxy-sync.service";
     };
   };
 
-  systemd.timers.meowconnect-outbounds-refresh = {
+  systemd.timers.sing-box-config-generator-refresh = {
     description = "Refresh MeowConnect outbound cache every 4 hours";
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -129,8 +150,4 @@ in
 
   age.secrets.htpasswd = mkNginxSecret "htpasswd";
   age.secrets.meowconnect-env = mkMeowSecret "meowconnect-env";
-
-  backup.locations.sing-box-generator = {
-    from = [ singBoxShortcutDir ];
-  };
 }

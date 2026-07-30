@@ -8,8 +8,7 @@ import sys
 
 from .client import MeowConnectClient
 from .config import load_client_config
-from .fetch import fetch_all_outbounds
-from .server import main as server_main
+from .fetch import fetch_raw_responses
 
 
 def _add_common_args(parser: argparse.ArgumentParser) -> None:
@@ -23,7 +22,7 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="MeowConnect client, fetch helper, and cache server.",
+        description="MeowConnect client and raw response fetch helper.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -41,20 +40,12 @@ def main(argv: list[str] | None = None) -> int:
     _add_common_args(profile_parser)
 
     fetch_parser = subparsers.add_parser(
-        "fetch-outbounds",
-        help="Fetch all proxy outbounds with spaced upstream requests",
+        "fetch-raw",
+        help="Fetch the raw connection list and connect responses",
     )
     _add_common_args(fetch_parser)
 
-    subparsers.add_parser(
-        "serve",
-        help="Run the local outbound cache HTTP server",
-        add_help=False,
-    )
-
-    args, server_argv = parser.parse_known_args(argv)
-    if args.command == "serve":
-        return server_main(server_argv)
+    args = parser.parse_args(argv)
 
     client = MeowConnectClient(load_client_config())
     indent = args.indent or None
@@ -66,8 +57,8 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "profile":
         result = client.profile()
     else:
-        outbounds, meta = fetch_all_outbounds(client)
-        result = {"meta": meta, "outbounds": outbounds}
+        raw, meta = fetch_raw_responses(client)
+        result = {"meta": meta, "raw": raw}
 
     json.dump(result, sys.stdout, indent=indent, ensure_ascii=False)
     sys.stdout.write("\n")

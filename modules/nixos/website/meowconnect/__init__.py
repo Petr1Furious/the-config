@@ -1,6 +1,6 @@
-"""MeowConnect API client and outbound cache service."""
+"""MeowConnect API client and raw response cache."""
 
-from .cache import OutboundCache
+from .cache import RawResponseCache
 from .client import (
     ClientConfig,
     ConnectResponse,
@@ -10,7 +10,7 @@ from .client import (
     ProfileResponse,
 )
 from .config import load_client_config
-from .fetch import fetch_all_outbounds
+from .fetch import fetch_raw_responses
 
 __all__ = [
     "ClientConfig",
@@ -18,8 +18,8 @@ __all__ = [
     "Connection",
     "Gateway",
     "MeowConnectClient",
-    "OutboundCache",
     "ProfileResponse",
-    "fetch_all_outbounds",
+    "RawResponseCache",
+    "fetch_raw_responses",
     "load_client_config",
 ]

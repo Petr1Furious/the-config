@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from urllib.error import URLError
 from urllib.parse import parse_qs, unquote, urlparse
-from urllib.request import urlopen
+
+from meowconnect.cache import RawResponseCache
+from meowconnect.client import MeowConnectClient
+from meowconnect.config import load_client_config
+from meowconnect.fetch import fetch_raw_responses
 
 URLTEST_INTERVAL = "15s"
 URLTEST_TOLERANCE = 200
+AUTOMATIC_OUTBOUND_TAG = "Automatic"
+SKIP_OUTBOUND_TYPES = frozenset({"direct", "block", "dns", "selector", "urltest"})
+RUSSIAN_SERVER_NAME = "russia"
+ROUTING_MODES = frozenset({"all-except-ru", "blocked", "ru-only"})
 
 
 def is_truthy(val: str | None) -> bool:
@@ -26,69 +34,126 @@ def deep_clone(obj):
     return json.loads(json.dumps(obj))
 
 
-def parse_json_param(params: dict[str, list[str]], key: str, default):
-    raw = first(params, key, None)
-    if raw is None or raw == "":
-        return deep_clone(default)
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Bad JSON in '{key}': {exc.msg}") from exc
-
-
-def as_outbound_list(raw):
-    if raw is None:
-        return []
-    if isinstance(raw, list):
-        return raw
-    if isinstance(raw, dict):
-        return [raw]
-    raise ValueError("'outbounds' must be a JSON object or array")
-
-
-def uses_meowconnect_source(params: dict[str, list[str]]) -> bool:
-    raw = first(params, "outbounds_source", None)
-    if raw is None:
-        return False
-    return (raw or "").strip().lower() == "meowconnect"
-
-
-def fetch_meowconnect_outbounds(url: str) -> list:
-    if not url:
-        raise ValueError("MeowConnect outbounds URL is not configured")
-    try:
-        with urlopen(url, timeout=30) as response:
-            body = response.read()
-    except URLError as exc:
-        raise ValueError(f"Failed to fetch MeowConnect outbounds: {exc}") from exc
-
-    try:
-        data = json.loads(body.decode("utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"MeowConnect outbounds response is not JSON: {exc.msg}") from exc
-
-    outbounds = as_outbound_list(data)
-    if not outbounds:
-        raise ValueError("MeowConnect outbounds cache is empty")
-    return outbounds
-
-
-def resolve_outbounds_raw(params: dict[str, list[str]], meowconnect_url: str | None):
-    explicit_raw = parse_json_param(params, "outbounds", [])
-    explicit = as_outbound_list(explicit_raw)
-    use_meow = uses_meowconnect_source(params)
-
-    if use_meow and explicit:
-        meow_outbounds = fetch_meowconnect_outbounds(meowconnect_url or "")
-        return explicit + meow_outbounds
-    if use_meow:
-        return fetch_meowconnect_outbounds(meowconnect_url or "")
-    if explicit:
-        return explicit
-    raise ValueError(
-        "No proxy outbounds configured. Provide 'outbounds' and/or "
-        "'outbounds_source=meowconnect'."
+def normalize_server_name(value: str) -> str:
+    return " ".join(
+        "".join(char.lower() if char.isalnum() else " " for char in value).split()
     )
+
+
+def parse_server_names(params: dict[str, list[str]]) -> list[str] | None:
+    if "servers" not in params:
+        return None
+    values = [
+        item.strip()
+        for value in params["servers"]
+        for item in value.split(",")
+        if item.strip()
+    ]
+    if not values:
+        raise ValueError("'servers' must contain at least one MeowConnect server name")
+    return list(dict.fromkeys(values))
+
+
+def connection_names(connection: dict) -> set[str]:
+    return {
+        normalize_server_name(value)
+        for value in (connection.get("name"), connection.get("shortname"))
+        if isinstance(value, str) and value.strip()
+    }
+
+
+def outbound_tag(connection: dict) -> str:
+    gate_id = connection["id"]
+    for key in ("name", "shortname"):
+        value = connection.get(key)
+        if isinstance(value, str) and value.strip():
+            return f"{value.strip()} [{gate_id}]"
+    return str(gate_id)
+
+
+def extract_proxy_outbound(response: object, gate_id: int, tag: str) -> dict:
+    if not isinstance(response, dict):
+        raise ValueError(
+            f"cached connect response for server {gate_id} is not an object"
+        )
+    configuration = response.get("configuration")
+    if not isinstance(configuration, dict):
+        raise ValueError(
+            f"cached connect response for server {gate_id} has no configuration"
+        )
+    outbounds = configuration.get("outbounds")
+    if not isinstance(outbounds, list):
+        raise ValueError(f"server {gate_id} configuration has no outbounds list")
+    for raw_outbound in outbounds:
+        if not isinstance(raw_outbound, dict):
+            continue
+        if raw_outbound.get("type") in SKIP_OUTBOUND_TYPES:
+            continue
+        outbound = deep_clone(raw_outbound)
+        outbound["tag"] = tag
+        return outbound
+    raise ValueError(f"server {gate_id} configuration has no proxy outbound")
+
+
+def build_meowconnect_outbounds(
+    raw: dict, server_names: list[str] | None, routing: str
+) -> list[dict]:
+    connections = raw.get("connections")
+    responses = raw.get("responses")
+    if not isinstance(connections, list) or not isinstance(responses, dict):
+        raise ValueError("raw MeowConnect cache is malformed")
+
+    requested = (
+        {normalize_server_name(name) for name in server_names}
+        if server_names is not None
+        else None
+    )
+    matched: set[str] = set()
+    available_names: list[str] = []
+    selected: list[tuple[int, str, object]] = []
+
+    for connection in connections:
+        if not isinstance(connection, dict) or not isinstance(
+            connection.get("id"), int
+        ):
+            continue
+        gate_id = connection["id"]
+        names = connection_names(connection)
+        display_name = connection.get("name")
+        if isinstance(display_name, str) and display_name:
+            available_names.append(display_name)
+
+        if requested is not None:
+            matches = requested & names
+            should_select = bool(matches)
+            matched.update(matches)
+        elif routing == "ru-only":
+            should_select = RUSSIAN_SERVER_NAME in names
+        else:
+            should_select = RUSSIAN_SERVER_NAME not in names
+
+        if should_select and str(gate_id) in responses:
+            selected.append(
+                (gate_id, outbound_tag(connection), responses[str(gate_id)])
+            )
+
+    if requested is not None:
+        missing = requested - matched
+        if missing:
+            raise ValueError(
+                "Unknown MeowConnect server name(s): "
+                + ", ".join(sorted(missing))
+                + ". Available: "
+                + ", ".join(available_names)
+            )
+
+    outbounds = [
+        extract_proxy_outbound(response, gate_id, tag)
+        for gate_id, tag, response in selected
+    ]
+    if not outbounds:
+        raise ValueError("Selected MeowConnect servers have no cached responses")
+    return outbounds
 
 
 def build_urltest(tag: str, outbounds: list[str]):
@@ -103,88 +168,34 @@ def build_urltest(tag: str, outbounds: list[str]):
     }
 
 
-PROXY_REF_KEYS = frozenset({"outbound", "detour", "download_detour"})
-
-
-def build_proxy_outbounds(raw, include_selector: bool = True):
-    provided_outbounds = as_outbound_list(raw)
-    if not provided_outbounds:
-        raise ValueError(
-            "No proxy outbounds configured. Provide JSON in query param 'outbounds'."
-        )
-
+def build_proxy_outbounds(provided_outbounds: list[dict]):
     proxy_outbounds = []
     tags = []
-    for index, raw_outbound in enumerate(provided_outbounds, start=1):
+    for raw_outbound in provided_outbounds:
         if not isinstance(raw_outbound, dict):
-            raise ValueError("Each outbound must be a JSON object")
+            raise ValueError("Each cached outbound must be a JSON object")
 
         outbound = deep_clone(raw_outbound)
         tag = outbound.get("tag")
-        if tag is None or (isinstance(tag, str) and not tag.strip()):
-            tag = f"proxy-s{index}"
-            outbound["tag"] = tag
         if not isinstance(tag, str) or not tag.strip():
-            raise ValueError(f"Outbound #{index} must have a string 'tag'")
+            raise ValueError("Each cached outbound must have a string tag")
 
         tags.append(tag)
         proxy_outbounds.append(outbound)
 
-    generated = proxy_outbounds + [build_urltest("proxy-auto", tags)]
-    if include_selector:
-        generated.append(
-            {
-                "type": "selector",
-                "tag": "proxy",
-                "outbounds": ["proxy-auto"] + tags,
-                "default": "proxy-auto",
-            }
-        )
+    if len(proxy_outbounds) == 1:
+        return proxy_outbounds
+
+    generated = proxy_outbounds + [build_urltest(AUTOMATIC_OUTBOUND_TAG, tags)]
+    generated.append(
+        {
+            "type": "selector",
+            "tag": "proxy",
+            "outbounds": [AUTOMATIC_OUTBOUND_TAG] + tags,
+            "default": AUTOMATIC_OUTBOUND_TAG,
+        }
+    )
     return generated
-
-
-def outbound_tags(outbounds: list) -> set[str]:
-    tags: set[str] = set()
-    for outbound in outbounds:
-        if isinstance(outbound, dict):
-            tag = outbound.get("tag")
-            if isinstance(tag, str) and tag:
-                tags.add(tag)
-    return tags
-
-
-def validate_fixed_outbound(tag: str, generated_outbounds: list):
-    allowed = outbound_tags(generated_outbounds)
-    if tag not in allowed:
-        raise ValueError(
-            f"'fixed_outbound' must be a generated outbound tag; got '{tag}'. "
-            f"Available: {', '.join(sorted(allowed))}"
-        )
-
-
-def replace_proxy_references(obj, fixed_tag: str):
-    if isinstance(obj, dict):
-        replaced = {}
-        for key, value in obj.items():
-            if key in PROXY_REF_KEYS and value == "proxy":
-                replaced[key] = fixed_tag
-            elif key == "final" and value == "proxy":
-                replaced[key] = fixed_tag
-            else:
-                replaced[key] = replace_proxy_references(value, fixed_tag)
-        return replaced
-    if isinstance(obj, list):
-        return [replace_proxy_references(item, fixed_tag) for item in obj]
-    return obj
-
-
-def apply_fixed_outbound(config, fixed_tag: str):
-    dns = config.get("dns")
-    if isinstance(dns, dict):
-        config["dns"] = replace_proxy_references(dns, fixed_tag)
-    route = config.get("route")
-    if isinstance(route, dict):
-        config["route"] = replace_proxy_references(route, fixed_tag)
 
 
 def set_generated_outbounds(config, generated_outbounds):
@@ -196,7 +207,7 @@ def set_generated_outbounds(config, generated_outbounds):
     for outbound in outbounds:
         if not isinstance(outbound, dict):
             continue
-        if outbound.get("tag") in {"proxy", "proxy-auto"}:
+        if outbound.get("tag") in {"proxy", AUTOMATIC_OUTBOUND_TAG}:
             continue
         base_outbounds.append(outbound)
 
@@ -212,42 +223,61 @@ AD_RULE_SETS = frozenset(
 )
 
 
-def _trim_rules_by_sets(rules, targets: frozenset[str]):
+def remove_rule_sets(rules, targets: frozenset[str]):
     if not isinstance(rules, list):
         return rules
 
-    trimmed_rules = []
+    filtered = []
     for rule in rules:
-        rs = rule.get("rule_set")
-        if isinstance(rs, list):
-            new_rs = [x for x in rs if x not in targets]
-            if not new_rs and rs:
-                continue
-            if new_rs != rs:
-                new_rule = dict(rule)
-                new_rule["rule_set"] = new_rs
-                trimmed_rules.append(new_rule)
-            else:
-                trimmed_rules.append(rule)
-        elif isinstance(rs, str) and rs in targets:
+        if not isinstance(rule, dict):
+            filtered.append(rule)
             continue
-        else:
-            trimmed_rules.append(rule)
-    return trimmed_rules
+        rule_sets = rule.get("rule_set")
+        if isinstance(rule_sets, list):
+            kept = [item for item in rule_sets if item not in targets]
+            if not kept and rule_sets:
+                continue
+            if kept != rule_sets:
+                rule = dict(rule)
+                rule["rule_set"] = kept
+        elif isinstance(rule_sets, str) and rule_sets in targets:
+            continue
+        filtered.append(rule)
+    return filtered
 
 
-def remove_ads_rule(config):
-    dns = config.get("dns")
-    if isinstance(dns, dict):
-        rules = dns.get("rules")
-        if isinstance(rules, list):
-            dns["rules"] = _trim_rules_by_sets(rules, AD_RULE_SETS)
-
+def allow_ads(config):
+    for section_name in ("dns", "route"):
+        section = config.get(section_name)
+        if isinstance(section, dict) and isinstance(section.get("rules"), list):
+            section["rules"] = remove_rule_sets(section["rules"], AD_RULE_SETS)
     route = config.get("route")
-    if isinstance(route, dict):
-        rules = route.get("rules")
-        if isinstance(rules, list):
-            route["rules"] = _trim_rules_by_sets(rules, AD_RULE_SETS)
+    if isinstance(route, dict) and isinstance(route.get("rule_set"), list):
+        route["rule_set"] = [
+            definition
+            for definition in route["rule_set"]
+            if not (
+                isinstance(definition, dict) and definition.get("tag") in AD_RULE_SETS
+            )
+        ]
+
+
+PROXY_REFERENCE_KEYS = frozenset({"outbound", "detour", "download_detour", "final"})
+
+
+def replace_proxy_references(value, outbound_tag: str):
+    if isinstance(value, dict):
+        return {
+            key: (
+                outbound_tag
+                if key in PROXY_REFERENCE_KEYS and item == "proxy"
+                else replace_proxy_references(item, outbound_tag)
+            )
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [replace_proxy_references(item, outbound_tag) for item in value]
+    return value
 
 
 def remove_redundant_final_route_rules(config, route_final: str):
@@ -263,78 +293,6 @@ def remove_redundant_final_route_rules(config, route_final: str):
         for rule in rules
         if not (isinstance(rule, dict) and rule.get("outbound") == route_final)
     ]
-
-
-def collect_rule_set_refs(config) -> set[str]:
-    refs: set[str] = set()
-    for section in ("dns", "route"):
-        sect = config.get(section)
-        if not isinstance(sect, dict):
-            continue
-        rules = sect.get("rules")
-        if not isinstance(rules, list):
-            continue
-        for rule in rules:
-            if not isinstance(rule, dict):
-                continue
-            rs = rule.get("rule_set")
-            if isinstance(rs, str):
-                refs.add(rs)
-            elif isinstance(rs, list):
-                refs.update(x for x in rs if isinstance(x, str))
-    return refs
-
-
-def prune_unused_rule_sets(config):
-    route = config.get("route")
-    if not isinstance(route, dict):
-        return
-    definitions = route.get("rule_set")
-    if not isinstance(definitions, list):
-        return
-
-    used = collect_rule_set_refs(config)
-    route["rule_set"] = [
-        entry
-        for entry in definitions
-        if isinstance(entry, dict)
-        and isinstance(entry.get("tag"), str)
-        and entry["tag"] in used
-    ]
-
-
-def maybe_trim_ru_ip_categories(config, no_community: bool, no_re_filter: bool):
-    if not (no_community or no_re_filter):
-        return
-
-    targets: list[str] = []
-    if no_community:
-        targets.append("geoip-ru-blocked-community")
-    if no_re_filter:
-        targets.append("geoip-re-filter")
-
-    route = config.get("route")
-    if not isinstance(route, dict):
-        return
-
-    rules = route.get("rules")
-    if not isinstance(rules, list):
-        return
-
-    trimmed_rules = []
-    for rule in rules:
-        rs = rule.get("rule_set")
-        if isinstance(rs, list):
-            new_rs = [x for x in rs if x not in targets]
-            if not new_rs and rs:
-                continue
-            new_rule = dict(rule)
-            new_rule["rule_set"] = new_rs
-            trimmed_rules.append(new_rule)
-        else:
-            trimmed_rules.append(rule)
-
-    route["rules"] = trimmed_rules
 
 
 def reorder_outbounds(config, primary_tag: str | None):
@@ -357,10 +315,89 @@ def set_route_final(config, final: str | None):
         route["final"] = final
 
 
-def resolve_route_final(primary: str, fixed_outbound: str | None) -> str:
-    if primary == "proxy" and fixed_outbound:
-        return fixed_outbound
-    return primary
+RUSSIAN_RULE_SETS = frozenset(
+    {
+        "geosite-ru-available-only-inside",
+        "geosite-ru-blocked",
+        "geoip-ru",
+        "geoip-ru-blocked",
+        "geoip-ru-blocked-community",
+        "geoip-re-filter",
+    }
+)
+RUSSIAN_DOMAIN_RULE_SETS = (
+    "geosite-ru-available-only-inside",
+    "geosite-ru-blocked",
+)
+RUSSIAN_DOMAIN_SUFFIXES = (
+    "ru",
+    "su",
+    "xn--p1ai",
+    "moscow",
+    "xn--80adxhks",
+    "xn--p1acf",
+)
+
+
+def rule_set_values(rule: dict) -> set[str]:
+    value = rule.get("rule_set")
+    if isinstance(value, str):
+        return {value}
+    if isinstance(value, list):
+        return {item for item in value if isinstance(item, str)}
+    return set()
+
+
+def configure_ru_only(config):
+    route = config.get("route")
+    if isinstance(route, dict):
+        rules = route.get("rules")
+        if isinstance(rules, list):
+            for rule in rules:
+                if not isinstance(rule, dict):
+                    continue
+                if (
+                    rule_set_values(rule) & RUSSIAN_RULE_SETS
+                    or "domain_suffix" in rule
+                    and rule.get("outbound") == "direct"
+                ):
+                    rule["outbound"] = "proxy"
+
+        definitions = route.get("rule_set")
+        if isinstance(definitions, list):
+            for definition in definitions:
+                if isinstance(definition, dict) and "download_detour" in definition:
+                    definition["download_detour"] = "direct"
+
+    dns = config.get("dns")
+    if not isinstance(dns, dict):
+        return
+    dns["final"] = "local-dns"
+    rules = dns.get("rules")
+    if not isinstance(rules, list):
+        return
+    rules.extend(
+        [
+            {
+                "rule_set": list(RUSSIAN_DOMAIN_RULE_SETS),
+                "server": "remote-doh-1",
+            },
+            {
+                "domain_suffix": list(RUSSIAN_DOMAIN_SUFFIXES),
+                "server": "remote-doh-1",
+            },
+        ]
+    )
+
+
+def configure_routing(config, routing: str):
+    if routing == "all-except-ru":
+        set_route_final(config, "proxy")
+        remove_redundant_final_route_rules(config, "proxy")
+    else:
+        set_route_final(config, "direct")
+    if routing == "ru-only":
+        configure_ru_only(config)
 
 
 def set_inbounds(config, mode: str):
@@ -385,7 +422,8 @@ def set_inbounds(config, mode: str):
         config["inbounds"] = selected
     else:
         config["inbounds"] = [
-            dict(inbound) if isinstance(inbound, dict) else inbound for inbound in inbounds
+            dict(inbound) if isinstance(inbound, dict) else inbound
+            for inbound in inbounds
         ]
 
     selected_inbound_tags = {
@@ -447,11 +485,78 @@ def trim_route_rules_for_inbounds(config, selected_tags: set[str]):
     route["rules"] = trimmed_rules
 
 
+class GeneratorService:
+    def __init__(self, state_dir: Path) -> None:
+        self.cache = RawResponseCache(state_dir)
+        self.lock = threading.Lock()
+
+    def refresh(self) -> dict:
+        with self.lock:
+            client = MeowConnectClient(load_client_config())
+            raw, meta = fetch_raw_responses(client)
+            if self.cache.exists():
+                merge_previous_responses(raw, self.cache.load_raw(), meta)
+            self.cache.save(raw, meta)
+            return meta
+
+    def load_raw(self) -> dict:
+        with self.lock:
+            if not self.cache.exists():
+                raise FileNotFoundError("MeowConnect raw response cache is empty")
+            return self.cache.load_raw()
+
+
+def merge_previous_responses(raw: dict, previous: dict, meta: dict) -> None:
+    connections = raw.get("connections")
+    responses = raw.get("responses")
+    previous_responses = previous.get("responses")
+    if (
+        not isinstance(connections, list)
+        or not isinstance(responses, dict)
+        or not isinstance(previous_responses, dict)
+    ):
+        return
+
+    current_ids = {
+        str(connection["id"])
+        for connection in connections
+        if isinstance(connection, dict) and isinstance(connection.get("id"), int)
+    }
+    stale_ids = []
+    for gate_id in current_ids:
+        if gate_id not in responses and gate_id in previous_responses:
+            responses[gate_id] = previous_responses[gate_id]
+            stale_ids.append(int(gate_id))
+    meta["stale_response_ids"] = sorted(stale_ids)
+    meta["response_count"] = len(responses)
+
+
+def params_from_mapping(raw: object) -> dict[str, list[str]]:
+    if not isinstance(raw, dict):
+        raise ValueError("shortcut parameters must be a JSON object")
+    params: dict[str, list[str]] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str):
+            raise ValueError("shortcut parameter names must be strings")
+        if isinstance(value, bool):
+            params[key] = ["true" if value else "false"]
+        elif isinstance(value, (str, int)):
+            params[key] = [str(value)]
+        elif isinstance(value, list) and all(
+            isinstance(item, (str, int)) for item in value
+        ):
+            params[key] = [str(item) for item in value]
+        else:
+            raise ValueError(f"unsupported shortcut value for '{key}'")
+    return params
+
+
 class Handler(BaseHTTPRequestHandler):
     route_path = "/"
-    shortcut_dir = Path("/srv/sing-box-generator")
-    templates = {}
-    meowconnect_url = None
+    refresh_path = "/sing-box-refresh/"
+    templates: dict[str, object] = {}
+    shortcuts: dict[str, object] = {}
+    service: GeneratorService | None = None
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -464,42 +569,45 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(400, str(exc))
             return
 
-        template_key = "legacy" if is_truthy(first(params, "legacy", None)) else "default"
+        template_key = (
+            "legacy" if is_truthy(first(params, "legacy", None)) else "default"
+        )
         template = self.templates.get(template_key)
         if template is None:
             self.send_error(400, "Legacy config template is not configured")
             return
 
         cfg = deep_clone(template)
-        fixed_outbound = None
         try:
-            outbounds_raw = resolve_outbounds_raw(params, self.meowconnect_url)
-            fixed_outbound_raw = first(params, "fixed_outbound", None)
-            fixed_outbound = (
-                (fixed_outbound_raw or "").strip() if fixed_outbound_raw is not None else None
-            ) or None
-            generated_outbounds = build_proxy_outbounds(
-                outbounds_raw,
-                include_selector=fixed_outbound is None,
+            routing_raw = first(params, "routing", "blocked")
+            routing = (routing_raw or "blocked").strip().lower()
+            if routing not in ROUTING_MODES:
+                raise ValueError(
+                    "Bad routing value; use all-except-ru, blocked, or ru-only"
+                )
+            server_names = parse_server_names(params)
+            raw = self._service().load_raw()
+            proxy_outbounds = build_meowconnect_outbounds(
+                raw,
+                server_names,
+                routing,
             )
-            if fixed_outbound:
-                validate_fixed_outbound(fixed_outbound, generated_outbounds)
+            generated_outbounds = build_proxy_outbounds(proxy_outbounds)
             set_generated_outbounds(cfg, generated_outbounds)
-            if fixed_outbound:
-                apply_fixed_outbound(cfg, fixed_outbound)
+            configure_routing(cfg, routing)
+            proxy_tag = "proxy"
+            if len(proxy_outbounds) == 1:
+                proxy_tag = proxy_outbounds[0]["tag"]
+                cfg = replace_proxy_references(cfg, proxy_tag)
+            reorder_outbounds(
+                cfg, proxy_tag if routing == "all-except-ru" else "direct"
+            )
         except ValueError as exc:
             self.send_error(400, str(exc))
             return
-
-        primary_raw = first(params, "primary", "direct")
-        primary = (primary_raw or "direct").strip().lower()
-        if primary not in {"proxy", "direct"}:
-            self.send_error(400, "Bad primary value; use proxy or direct")
+        except FileNotFoundError as exc:
+            self.send_error(503, str(exc))
             return
-        route_final = resolve_route_final(primary, fixed_outbound)
-        reorder_tag = route_final if primary == "proxy" else primary
-        reorder_outbounds(cfg, reorder_tag)
-        set_route_final(cfg, route_final)
 
         inbound_raw = first(params, "inbound", "tun")
         inbound_mode = (inbound_raw or "tun").strip().lower()
@@ -512,16 +620,7 @@ class Handler(BaseHTTPRequestHandler):
             set_proxy_inbounds_listen(cfg, "0.0.0.0")
 
         if is_truthy(first(params, "allow_ads", None)):
-            remove_ads_rule(cfg)
-
-        no_comm = is_truthy(first(params, "no_ru_blocked_community", None))
-        no_ref = is_truthy(first(params, "no_re_filter", None))
-        maybe_trim_ru_ip_categories(cfg, no_comm, no_ref)
-
-        if primary == "proxy":
-            remove_redundant_final_route_rules(cfg, route_final)
-
-        prune_unused_rule_sets(cfg)
+            allow_ads(cfg)
 
         body = json.dumps(cfg, indent=4, ensure_ascii=False).encode("utf-8")
         self.send_response(200)
@@ -530,6 +629,21 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path != self.refresh_path:
+            self.send_error(404, "Not Found")
+            return
+        if self.client_address[0] not in {"127.0.0.1", "::1"}:
+            self.send_error(403, "Refresh is local-only")
+            return
+        try:
+            meta = self._service().refresh()
+        except Exception as exc:
+            self.send_error(500, str(exc))
+            return
+        self._json_response(200, meta)
 
     def resolve_params(self, parsed):
         request_params = parse_qs(parsed.query, keep_blank_values=True)
@@ -541,29 +655,30 @@ class Handler(BaseHTTPRequestHandler):
         return shortcut_params
 
     def load_shortcut_params(self, request_path: str):
-        shortcut_path = self.shortcut_path_for(request_path)
-        with shortcut_path.open("r", encoding="utf-8") as f:
-            content = f.read().strip()
-        if content.startswith("?"):
-            content = content[1:]
-        return parse_qs(content, keep_blank_values=True)
-
-    def shortcut_path_for(self, request_path: str):
         route_prefix = self.route_path.rsplit("/", 1)[0]
         if not request_path.startswith(route_prefix + "/"):
             raise FileNotFoundError
 
         relative = unquote(request_path[len(route_prefix) + 1 :])
-        if not relative or relative.startswith("/") or "\x00" in relative:
+        if not relative or "/" in relative or "\x00" in relative:
             raise FileNotFoundError
+        if relative not in self.shortcuts:
+            raise FileNotFoundError
+        return params_from_mapping(self.shortcuts[relative])
 
-        root = self.shortcut_dir.resolve()
-        candidate = (root / relative).resolve()
-        if root != candidate and root not in candidate.parents:
-            raise FileNotFoundError
-        if not candidate.is_file():
-            raise FileNotFoundError
-        return candidate
+    def _service(self) -> GeneratorService:
+        if self.service is None:
+            raise RuntimeError("generator service is not configured")
+        return self.service
+
+    def _json_response(self, status: int, payload) -> None:
+        body = json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def log_message(self, format, *args):
         print(
@@ -585,27 +700,40 @@ def main():
     ap.add_argument("--file", required=True, help="Path to base sing-box config (JSON)")
     ap.add_argument("--legacy-file", help="Path to legacy base sing-box config (JSON)")
     ap.add_argument(
-        "--shortcut-dir",
-        default="/srv/sing-box-generator",
-        help="Directory with query-string shortcut files (default: /srv/sing-box-generator)",
+        "--shortcuts-file",
+        required=True,
+        help="Path to the JSON shortcut manifest",
+    )
+    ap.add_argument(
+        "--state-dir",
+        default="/var/lib/meowconnect",
+        help="Directory for raw MeowConnect responses",
     )
     ap.add_argument("--path", default="/", help="URL path to serve (default: /)")
     ap.add_argument(
         "--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)"
     )
     ap.add_argument("--port", type=int, default=8080, help="Bind port (default: 8080)")
-    ap.add_argument(
-        "--meowconnect-url",
-        help="URL for cached MeowConnect outbounds (e.g. http://127.0.0.1:18083/outbounds)",
-    )
     args = ap.parse_args()
 
     Handler.route_path = args.path
-    Handler.shortcut_dir = Path(args.shortcut_dir)
-    Handler.meowconnect_url = args.meowconnect_url
     Handler.templates = {"default": load_json(args.file)}
     if args.legacy_file:
         Handler.templates["legacy"] = load_json(args.legacy_file)
+    shortcuts = load_json(args.shortcuts_file)
+    if not isinstance(shortcuts, dict):
+        raise SystemExit("Shortcut manifest must be a JSON object")
+    Handler.shortcuts = shortcuts
+
+    service = GeneratorService(Path(args.state_dir))
+    if not service.cache.exists():
+        print("Raw MeowConnect cache missing; running initial refresh...")
+        meta = service.refresh()
+        print(
+            f"Initial refresh complete: {meta.get('response_count', 0)} responses "
+            f"in {meta.get('duration_seconds', '?')}s"
+        )
+    Handler.service = service
 
     server = HTTPServer((args.host, args.port), Handler)
     print(f"Serving on http://{args.host}:{args.port}{args.path}")

@@ -34,7 +34,6 @@ def load_client_config() -> ClientConfig:
             values[field] = value
     if missing:
         raise RuntimeError(
-            "Missing required MeowConnect environment variables: "
-            + ", ".join(missing)
+            "Missing required MeowConnect environment variables: " + ", ".join(missing)
         )
     return ClientConfig(**values)
