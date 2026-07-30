@@ -9,10 +9,6 @@ let
   eza = lib.getExe pkgs.eza;
 in
 {
-  home.packages = with pkgs; [
-    nix-tree
-  ];
-
   programs.atuin = {
     enable = true;
     flags = [ "--disable-up-arrow" ];
@@ -92,6 +88,7 @@ in
         lt = "${ls} --tree --level=2";
       in
       {
+        dco = "docker compose";
         e = "$EDITOR";
         se = "sudoedit";
         ls = ls;
@@ -100,7 +97,6 @@ in
         sls = "sudo ${ls}";
         sll = "sudo ${ll}";
         slt = "sudo ${lt}";
-        dco = "docker compose";
         gst = "git status";
         gco = "git checkout";
         gcm = "git commit -m";

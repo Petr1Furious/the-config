@@ -70,7 +70,6 @@
 
     casks = [
       "google-chrome"
-      "iterm2"
       "visual-studio-code"
       "notunes"
       "raycast"

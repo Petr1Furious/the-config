@@ -32,78 +32,104 @@
 
   outputs =
     inputs@{
-      self,
       nixpkgs,
       nixpkgs-unstable,
-      agenix,
       home-manager,
       home-manager-unstable,
-      nixarr,
       disko,
       nix-darwin,
+      ...
     }:
     let
-      system = "x86_64-linux";
-      pkgsUnstable = import nixpkgs-unstable {
-        inherit system;
-        config.allowUnfree = true;
-      };
-      specialArgs = {
+      mkPkgs =
+        source: system:
+        import source {
+          inherit system;
+          config.allowUnfree = true;
+        };
+
+      mkPkgsUnstable = mkPkgs nixpkgs-unstable;
+
+      commonSpecialArgs = {
         inherit inputs;
-        pkgs-unstable = pkgsUnstable;
-        secrets = ./secrets;
       };
+
+      mkNixosServer =
+        {
+          hostModules,
+          homeModules ? [ ],
+        }:
+        let
+          system = "x86_64-linux";
+        in
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = commonSpecialArgs // {
+            pkgs-unstable = mkPkgsUnstable system;
+            secrets = ./secrets;
+          };
+          modules = hostModules ++ [
+            home-manager.nixosModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.petrtsopa.imports = [
+                ./home/profiles/nixos-server.nix
+              ]
+              ++ homeModules;
+            }
+          ];
+        };
+
+      mkDarwin =
+        {
+          hostModule,
+          homeModule,
+          user,
+        }:
+        let
+          system = "aarch64-darwin";
+        in
+        nix-darwin.lib.darwinSystem {
+          specialArgs = commonSpecialArgs // {
+            pkgs-unstable = mkPkgsUnstable system;
+          };
+          modules = [
+            hostModule
+            home-manager-unstable.darwinModules.home-manager
+            {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.${user} = homeModule;
+            }
+          ];
+        };
+
     in
     {
-      nixosConfigurations.home-server = nixpkgs.lib.nixosSystem {
-        inherit system specialArgs;
-        modules = [
-          ./hosts/home-server
-          home-manager.nixosModules.home-manager
+      nixosConfigurations.home-server = mkNixosServer {
+        hostModules = [ ./hosts/home-server ];
+        homeModules = [
           {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.petrtsopa = {
-              imports = [ ./home ];
-              shell.autoAttachTmux = true;
-            };
+            programs.zsh.initContent = nixpkgs.lib.mkAfter ''
+              export LIBVIRT_DEFAULT_URI="qemu:///system"
+            '';
           }
         ];
       };
 
-      nixosConfigurations.potato-server = nixpkgs.lib.nixosSystem {
-        inherit system specialArgs;
-        modules = [
+      nixosConfigurations.potato-server = mkNixosServer {
+        hostModules = [
           ./hosts/potato-server
           disko.nixosModules.disko
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.petrtsopa = {
-              imports = [ ./home ];
-              shell.autoAttachTmux = true;
-            };
-          }
         ];
       };
 
-      darwinConfigurations."Petrs-MacBook-Pro" = nix-darwin.lib.darwinSystem {
-        specialArgs = specialArgs // {
-          pkgs-unstable = import nixpkgs-unstable {
-            system = "aarch64-darwin";
-            config.allowUnfree = true;
-          };
-        };
-        modules = [
-          ./hosts/potato-macbook
-          home-manager-unstable.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.petrtsopa = ./home;
-          }
-        ];
+      darwinConfigurations."Petrs-MacBook-Pro" = mkDarwin {
+        hostModule = ./hosts/potato-macbook;
+        homeModule = ./home/profiles/personal-mac.nix;
+        user = "petrtsopa";
       };
+
     };
 }

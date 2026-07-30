@@ -9,7 +9,6 @@ lib.mkIf pkgs.stdenv.isDarwin {
     (writeShellScriptBin "timeout" ''
       exec ${coreutils}/bin/timeout "$@"
     '')
-    rsync
   ];
 
   programs.ghostty = {

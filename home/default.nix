@@ -5,10 +5,8 @@
 
 {
   imports = [
-    ./darwin.nix
     ./editor.nix
     ./git.nix
-    ./linux.nix
     ./shell.nix
     ./tmux.nix
   ];
@@ -23,26 +21,24 @@
   };
 
   home.packages = with pkgs; [
-    nixfmt
-    tealdeer
-    manix
-    whois
     bmon
-    restic
-    autorestic
-    ncdu
-    zip
-    unzip
-    nodejs_24
-    ripgrep
-    htop
     btop
-    jq
-    rclone
     fd
+    htop
+    jq
+    manix
+    ncdu
+    nix-tree
+    nixfmt
+    nodejs_26
+    ripgrep
+    rsync
+    tealdeer
+    unzip
     uv
     wget
-    claude-code
+    whois
+    zip
   ];
 
   home.sessionPath = [
