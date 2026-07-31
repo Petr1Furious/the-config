@@ -8,6 +8,8 @@
 
   home.packages = with pkgs; [
     autorestic
+    gcc
+    pciutils
     rclone
     restic
   ];
