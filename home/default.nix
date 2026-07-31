@@ -34,6 +34,7 @@
     ripgrep
     rsync
     tealdeer
+    tree-sitter
     unzip
     uv
     wget
