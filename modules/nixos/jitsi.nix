@@ -22,12 +22,17 @@ in
     };
   };
   services.jitsi-videobridge = {
-    openFirewall = true;
+    openFirewall = false;
+    config.videobridge.ice.tcp.enabled = false;
+
     nat = {
-      localAddress = "192.168.1.2";
-      publicAddress = "188.32.4.54";
+      localAddress = "10.99.0.2";
+      # Selectel relay address (jitsi.petr1furious.me)
+      publicAddress = "82.148.28.127";
     };
   };
+
+  networking.firewall.allowedUDPPorts = [ 10000 ];
 
   nixpkgs.config.permittedInsecurePackages = [
     "jitsi-meet-1.0.8792"
@@ -50,10 +55,10 @@ in
     requires = [ "prosody.service" ];
   };
 
-  systemd.services.jicofo = lib.mkIf (
-    config.services.jitsi-meet.prosody.enable && config.services.jitsi-meet.jicofo.enable
-  ) {
-    after = [ "prosody.service" ];
-    requires = [ "prosody.service" ];
-  };
+  systemd.services.jicofo =
+    lib.mkIf (config.services.jitsi-meet.prosody.enable && config.services.jitsi-meet.jicofo.enable)
+      {
+        after = [ "prosody.service" ];
+        requires = [ "prosody.service" ];
+      };
 }

@@ -41,11 +41,6 @@
         };
         globalConfig = ''
           grace_period 30s
-          servers {
-            # Temporarily disabled HTTP/3
-            # TODO: Re-enable HTTP/3 after moving
-            protocols h1 h2
-          }
         '';
         inherit virtualHosts;
       };

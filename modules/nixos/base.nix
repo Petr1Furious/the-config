@@ -8,6 +8,7 @@
 {
   imports = [
     ../common/nix.nix
+    ./tailscale.nix
     inputs.agenix.nixosModules.default
   ];
 

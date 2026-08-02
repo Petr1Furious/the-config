@@ -25,6 +25,7 @@ let
     "grafana-secret-key.age"
     "meowconnect-env.age"
     "backblaze-b2-autorestic-env.age"
+    "tailscale-authkey.age"
   ];
 in
 builtins.listToAttrs (

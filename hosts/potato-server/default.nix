@@ -19,6 +19,7 @@
     ../../modules/nixos/backup-home.nix
     ../../modules/nixos/jitsi.nix
     ../../modules/nixos/nginx.nix
+    ../../modules/nixos/pihole.nix
     ../../modules/nixos/immich.nix
     ../../modules/nixos/proxy.nix
     ../../modules/nixos/minecraft
