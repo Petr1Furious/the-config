@@ -97,11 +97,6 @@ in
         sls = "sudo ${ls}";
         sll = "sudo ${ll}";
         slt = "sudo ${lt}";
-        gst = "git status";
-        gco = "git checkout";
-        gcm = "git commit -m";
-        gcma = "git commit -am";
-        gpl = "git pull";
       };
 
     shellGlobalAliases = {
