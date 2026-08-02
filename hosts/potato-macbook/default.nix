@@ -23,6 +23,7 @@
       "iina"
       "orbstack"
       "bettertouchtool"
+      "tailscale-app"
     ];
   };
 }
