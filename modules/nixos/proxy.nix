@@ -112,10 +112,5 @@ in
       };
       wantedBy = [ "multi-user.target" ];
     };
-
-    networking.firewall.allowedTCPPorts = [
-      10808
-      10809
-    ];
   };
 }

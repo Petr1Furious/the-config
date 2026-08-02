@@ -43,7 +43,6 @@ let
   };
   serverProxy = allExceptRu // {
     inbound = "proxy";
-    proxy_public = true;
     servers = "Netherlands";
   };
   singBoxShortcuts = {
