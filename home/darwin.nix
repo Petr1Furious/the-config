@@ -10,6 +10,7 @@ lib.mkIf pkgs.stdenv.isDarwin {
       exec ${coreutils}/bin/timeout "$@"
     '')
     ghostscript
+    gh
   ];
 
   programs.ghostty = {
