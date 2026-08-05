@@ -43,9 +43,9 @@ in
   # But it also masks other exit-1 failures.
   systemd.services.pihole-ftl-setup.serviceConfig.SuccessExitStatus = [ 1 ];
 
-  # Restart FTL once gravity is final to avoid a race between the systemd units
+  # Restart FTL once gravity is final to avoid a race between the systemd units.
   systemd.services.pihole-ftl-setup.serviceConfig.ExecStartPost =
-    "${config.systemd.package}/bin/systemctl --no-block try-restart pihole-ftl.service";
+    "+${config.systemd.package}/bin/systemctl --no-block try-restart pihole-ftl.service";
 
   # Refresh blocklists weekly.
   systemd.timers.pihole-ftl-setup = {
