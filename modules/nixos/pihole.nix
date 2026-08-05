@@ -28,7 +28,8 @@ in
         "149.112.112.112"
       ];
 
-      hosts = map (proxy: "${tailnetAddress} ${proxy.host}") config.caddy.proxies;
+      # user space wg is slow on macos :/
+      # hosts = map (proxy: "${tailnetAddress} ${proxy.host}") config.caddy.proxies;
     };
   };
 

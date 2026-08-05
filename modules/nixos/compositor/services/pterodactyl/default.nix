@@ -118,7 +118,11 @@ in
       "network-online.target"
     ];
     wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.docker pkgs.coreutils pkgs.bash ];
+    path = [
+      pkgs.docker
+      pkgs.coreutils
+      pkgs.bash
+    ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

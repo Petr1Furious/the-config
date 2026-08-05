@@ -8,7 +8,6 @@
 
   home.packages = with pkgs; [
     autorestic
-    claude-code
     rclone
     restic
   ];

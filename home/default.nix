@@ -1,5 +1,6 @@
 {
   pkgs,
+  pkgs-unstable,
   ...
 }:
 
@@ -23,6 +24,7 @@
   home.packages = with pkgs; [
     bmon
     btop
+    pkgs-unstable.claude-code
     fd
     htop
     jq

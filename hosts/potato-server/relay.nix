@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 # Client side of the transparent relay. The Selectel host (82.148.28.127) DNATs
 # all its ports to this host over the WireGuard tunnel below, preserving the

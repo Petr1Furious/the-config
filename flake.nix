@@ -61,18 +61,19 @@
         }:
         let
           system = "x86_64-linux";
-        in
-        nixpkgs.lib.nixosSystem {
-          inherit system;
           specialArgs = commonSpecialArgs // {
             pkgs-unstable = mkPkgsUnstable system;
             secrets = ./secrets;
           };
+        in
+        nixpkgs.lib.nixosSystem {
+          inherit system specialArgs;
           modules = hostModules ++ [
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = specialArgs;
               home-manager.users.petrtsopa.imports = [
                 ./home/profiles/nixos-server.nix
               ]
@@ -89,17 +90,19 @@
         }:
         let
           system = "aarch64-darwin";
-        in
-        nix-darwin.lib.darwinSystem {
           specialArgs = commonSpecialArgs // {
             pkgs-unstable = mkPkgsUnstable system;
           };
+        in
+        nix-darwin.lib.darwinSystem {
+          inherit specialArgs;
           modules = [
             hostModule
             home-manager-unstable.darwinModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = specialArgs;
               home-manager.users.${user} = homeModule;
             }
           ];
