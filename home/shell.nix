@@ -7,6 +7,7 @@
 
 let
   eza = lib.getExe pkgs.eza;
+  rsync = lib.getExe pkgs.rsync;
 in
 {
   programs.atuin = {
@@ -86,6 +87,10 @@ in
         ls = "${eza} --group-directories-first -ag --icons always";
         ll = "${ls} -l";
         lt = "${ls} --tree --level=2";
+        # --info=progress2 only reports a meaningful total once the whole file
+        # list is built, which --no-inc-recursive forces up front.
+        rsl = "${rsync} -ahH --partial --info=progress2 --no-inc-recursive";
+        rsy = "${rsl} -z";
       in
       {
         dco = "docker compose";
@@ -97,6 +102,8 @@ in
         sls = "sudo ${ls}";
         sll = "sudo ${ll}";
         slt = "sudo ${lt}";
+        rsl = rsl;
+        rsy = rsy;
       };
 
     shellGlobalAliases = {
