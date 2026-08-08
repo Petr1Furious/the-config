@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -11,6 +12,7 @@ lib.mkIf pkgs.stdenv.isDarwin {
     '')
     ghostscript
     gh
+    inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
   programs.ghostty = {
