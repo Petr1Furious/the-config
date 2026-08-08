@@ -28,8 +28,12 @@ in
         "149.112.112.112"
       ];
 
-      # user space wg is slow on macos :/
-      # hosts = map (proxy: "${tailnetAddress} ${proxy.host}") config.caddy.proxies;
+      # Only override the tailscale-only proxies (grafana/radarr/sonarr/vaultwarden).
+      # Remapping everything, including throughput-sensitive stuff like jellyfin,
+      # would significantly decrease performance (userspace wg is notably slow on macos).
+      hosts = map (proxy: "${tailnetAddress} ${proxy.host}") (
+        builtins.filter (proxy: proxy.tailscaleOnly) config.caddy.proxies
+      );
     };
   };
 

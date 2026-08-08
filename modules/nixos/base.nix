@@ -14,7 +14,12 @@
 
   i18n.defaultLocale = lib.mkDefault "en_US.UTF-8";
 
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    settings.PasswordAuthentication = false;
+  };
+
+  services.fail2ban.enable = true;
 
   security.sudo.wheelNeedsPassword = false;
 

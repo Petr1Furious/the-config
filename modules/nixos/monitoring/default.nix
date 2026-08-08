@@ -78,6 +78,7 @@ in
     {
       host = domain;
       target = "http://localhost:${toString grafanaPort}";
+      tailscaleOnly = true;
     }
   ];
 

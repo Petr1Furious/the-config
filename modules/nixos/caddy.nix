@@ -12,6 +12,10 @@
           options = {
             host = mkOption { type = types.str; };
             target = mkOption { type = types.str; };
+            tailscaleOnly = mkOption {
+              type = types.bool;
+              default = false;
+            };
           };
         }
       );
@@ -25,6 +29,10 @@
         map (entry: {
           name = entry.host;
           value.extraConfig = ''
+            ${lib.optionalString entry.tailscaleOnly ''
+              @not-tailnet not remote_ip 100.64.0.0/10
+              respond @not-tailnet 403
+            ''}
             reverse_proxy ${entry.target}
           '';
         }) config.caddy.proxies

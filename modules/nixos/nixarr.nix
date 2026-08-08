@@ -76,10 +76,12 @@ in
     {
       host = "radarr.petr1furious.me";
       target = "http://127.0.0.1:${toString config.services.radarr.settings.server.port}";
+      tailscaleOnly = true;
     }
     {
       host = "sonarr.petr1furious.me";
       target = "http://127.0.0.1:${toString config.services.sonarr.settings.server.port}";
+      tailscaleOnly = true;
     }
   ];
 }
