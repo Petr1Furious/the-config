@@ -24,6 +24,7 @@
       "orbstack"
       "bettertouchtool"
       "tailscale-app"
+      "linearmouse"
     ];
   };
 }
