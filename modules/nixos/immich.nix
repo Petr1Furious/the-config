@@ -16,6 +16,7 @@ in
     settings = {
       server.externalDomain = "https://${hostName}";
       machineLearning.ocr.modelName = "ESLAV__PP-OCRv5_mobile";
+      ffmpeg.preset = "medium";
     };
     package = pkgs-unstable.immich;
   };
