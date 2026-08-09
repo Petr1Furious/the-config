@@ -17,7 +17,7 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     nixarr = {
-      url = "github:rasmus-kirk/nixarr";
+      url = "github:nix-media-server/nixarr";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     disko = {

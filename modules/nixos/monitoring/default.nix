@@ -71,7 +71,34 @@ in
           }
         ];
       }
-    ];
+    ]
+    ++
+      map
+        (e: {
+          job_name = e.name;
+          scrape_interval = "60s";
+          static_configs = [ { targets = [ "127.0.0.1:${toString e.port}" ]; } ];
+        })
+        (
+          lib.optionals config.nixarr.exporters.enable [
+            {
+              name = "sonarr";
+              port = config.nixarr.sonarr.exporter.port;
+            }
+            {
+              name = "radarr";
+              port = config.nixarr.radarr.exporter.port;
+            }
+            {
+              name = "prowlarr";
+              port = config.nixarr.prowlarr.exporter.port;
+            }
+            {
+              name = "qbittorrent";
+              port = config.nixarr.qbittorrent.exporter.port;
+            }
+          ]
+        );
   };
 
   caddy.proxies = [

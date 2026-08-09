@@ -41,7 +41,8 @@ let
   ruOnlyLegacy = ruOnly // {
     legacy = true;
   };
-  serverProxy = allExceptRu // {
+  serverProxy = {
+    routing = "all-including-ru";
     inbound = "proxy";
     servers = "Netherlands";
   };

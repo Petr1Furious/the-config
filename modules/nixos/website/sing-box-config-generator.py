@@ -16,7 +16,14 @@ URLTEST_TOLERANCE = 200
 AUTOMATIC_OUTBOUND_TAG = "Automatic"
 SKIP_OUTBOUND_TYPES = frozenset({"direct", "block", "dns", "selector", "urltest"})
 RUSSIAN_SERVER_NAME = "russia"
-ROUTING_MODES = frozenset({"all-except-ru", "blocked", "ru-only"})
+ROUTING_MODES = frozenset({"all-except-ru", "all-including-ru", "blocked", "ru-only"})
+
+# Stripped by "all-including-ru". geosite-private stays direct in every mode:
+# RFC1918 and loopback must never be tunnelled.
+RU_DIRECT_RULE_SETS = frozenset({"geosite-ru-available-only-inside", "geoip-ru"})
+RU_DIRECT_DOMAIN_SUFFIXES = frozenset(
+    {"ru", "su", "xn--p1ai", "moscow", "xn--80adxhks", "xn--p1acf"}
+)
 
 
 def is_truthy(val: str | None) -> bool:
@@ -390,12 +397,42 @@ def configure_ru_only(config):
     )
 
 
+def remove_ru_direct_rules(config):
+    route = config.get("route")
+    if not isinstance(route, dict):
+        return
+    rules = route.get("rules")
+    if isinstance(rules, list):
+        rules = remove_rule_sets(rules, RU_DIRECT_RULE_SETS)
+        route["rules"] = [
+            rule
+            for rule in rules
+            if not (
+                isinstance(rule, dict)
+                and rule.get("outbound") == "direct"
+                and rule.get("domain_suffix")
+                and set(rule["domain_suffix"]) <= RU_DIRECT_DOMAIN_SUFFIXES
+            )
+        ]
+    if isinstance(route.get("rule_set"), list):
+        route["rule_set"] = [
+            definition
+            for definition in route["rule_set"]
+            if not (
+                isinstance(definition, dict)
+                and definition.get("tag") in RU_DIRECT_RULE_SETS
+            )
+        ]
+
+
 def configure_routing(config, routing: str):
-    if routing == "all-except-ru":
+    if routing in {"all-except-ru", "all-including-ru"}:
         set_route_final(config, "proxy")
         remove_redundant_final_route_rules(config, "proxy")
     else:
         set_route_final(config, "direct")
+    if routing == "all-including-ru":
+        remove_ru_direct_rules(config)
     if routing == "ru-only":
         configure_ru_only(config)
 
@@ -583,7 +620,8 @@ class Handler(BaseHTTPRequestHandler):
             routing = (routing_raw or "blocked").strip().lower()
             if routing not in ROUTING_MODES:
                 raise ValueError(
-                    "Bad routing value; use all-except-ru, blocked, or ru-only"
+                    "Bad routing value; use all-except-ru, all-including-ru, "
+                    "blocked, or ru-only"
                 )
             server_names = parse_server_names(params)
             raw = self._service().load_raw()
@@ -600,7 +638,10 @@ class Handler(BaseHTTPRequestHandler):
                 proxy_tag = proxy_outbounds[0]["tag"]
                 cfg = replace_proxy_references(cfg, proxy_tag)
             reorder_outbounds(
-                cfg, proxy_tag if routing == "all-except-ru" else "direct"
+                cfg,
+                proxy_tag
+                if routing in {"all-except-ru", "all-including-ru"}
+                else "direct",
             )
         except ValueError as exc:
             self.send_error(400, str(exc))
