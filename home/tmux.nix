@@ -16,6 +16,7 @@
       historyLimit = 50000;
       keyMode = "vi";
       mouse = true;
+      prefix = "`";
       terminal = "tmux-256color";
       plugins = [ pkgs.tmuxPlugins.sensible ];
       extraConfig = ''
