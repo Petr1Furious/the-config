@@ -47,11 +47,7 @@ in
       pterodactyl-panel = {
         image = "ghcr.io/pterodactyl/panel:v1.11.11";
         container_name = "pterodactyl-panel";
-        labels = [
-          "caddy=pterodactyl.petr1furious.me"
-          "caddy.reverse_proxy={{upstreams 80}}"
-          "caddy_ingress_network=pterodactyl_default"
-        ];
+        ports = [ "127.0.0.1:8120:80" ];
         env_file = config.age.secrets.pterodactyl-panel-env.path;
         volumes = [
           "/srv/pterodactyl/logs:/app/storage/logs"
@@ -149,6 +145,10 @@ in
     {
       host = "pterodactyl-wings.petr1furious.me";
       target = "http://localhost:8461";
+    }
+    {
+      host = "pterodactyl.petr1furious.me";
+      target = "http://127.0.0.1:8120";
     }
   ];
 

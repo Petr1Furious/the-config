@@ -24,11 +24,7 @@
           };
         };
         stop_grace_period = "60s";
-        labels = [
-          "caddy=overleaf.petr1furious.me"
-          "caddy.reverse_proxy={{upstreams 80}}"
-          "caddy_ingress_network=overleaf_default"
-        ];
+        ports = [ "127.0.0.1:8110:80" ];
         volumes = [
           "/srv/overleaf:/var/lib/overleaf"
         ];
@@ -93,4 +89,11 @@
       "/srv/overleaf"
     ];
   };
+
+  caddy.proxies = [
+    {
+      host = "overleaf.petr1furious.me";
+      target = "http://127.0.0.1:8110";
+    }
+  ];
 }

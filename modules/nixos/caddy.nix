@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 {
@@ -43,28 +42,10 @@
         enable = true;
         email = "petrtsopa03@gmail.com";
         enableReload = true;
-        package = pkgs.caddy.withPlugins {
-          plugins = [ "github.com/lucaslorentz/caddy-docker-proxy/v2@v2.13.1" ];
-          hash = "sha256-qvPbPRneBtgw6r3jAM7seUEeZX9hYXdOTIhKijTgXl4=";
-        };
         globalConfig = ''
           grace_period 30s
         '';
         inherit virtualHosts;
-      };
-
-      users.users.caddy.extraGroups = [ "docker" ];
-
-      systemd.services.caddy = {
-        after = [ "docker.service" ];
-        requires = [ "docker.service" ];
-        serviceConfig = {
-          Type = "simple";
-          ExecStart = lib.mkForce [
-            ""
-            "${lib.getExe config.services.caddy.package} docker-proxy --caddyfile-path ${config.services.caddy.configFile}"
-          ];
-        };
       };
 
       networking.firewall.allowedTCPPorts = [
