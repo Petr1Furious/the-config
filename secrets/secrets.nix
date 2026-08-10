@@ -26,6 +26,7 @@ let
     "meowconnect-env.age"
     "backblaze-b2-autorestic-env.age"
     "tailscale-authkey.age"
+    "cloudflare-dns-token.age"
   ];
 in
 builtins.listToAttrs (

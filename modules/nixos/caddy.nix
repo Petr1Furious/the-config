@@ -1,6 +1,8 @@
 {
   config,
   lib,
+  pkgs,
+  secrets,
   ...
 }:
 {
@@ -29,6 +31,11 @@
           name = entry.host;
           value.extraConfig = ''
             ${lib.optionalString entry.tailscaleOnly ''
+              # No public DNS record for this host, so HTTP-01 can't reach it; prove
+              # ownership via a DNS-01 TXT record instead.
+              tls {
+                dns cloudflare {env.CF_API_TOKEN}
+              }
               @not-tailnet not remote_ip 100.64.0.0/10
               respond @not-tailnet 403
             ''}
@@ -38,15 +45,23 @@
       );
     in
     {
+      age.secrets.cloudflare-dns-token.file = secrets + "/cloudflare-dns-token.age";
+
       services.caddy = {
         enable = true;
         email = "petrtsopa03@gmail.com";
         enableReload = true;
+        package = pkgs.caddy.withPlugins {
+          plugins = [ "github.com/caddy-dns/cloudflare@v0.2.4" ];
+          hash = "sha256-7GoH8YLCoPmPExQxoga2FHB58zQDoZVf1BBwkVi0SsQ=";
+        };
         globalConfig = ''
           grace_period 30s
         '';
         inherit virtualHosts;
       };
+
+      systemd.services.caddy.serviceConfig.EnvironmentFile = config.age.secrets.cloudflare-dns-token.path;
 
       networking.firewall.allowedTCPPorts = [
         80
