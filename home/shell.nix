@@ -28,6 +28,22 @@ in
 
     autocd = true;
     enableCompletion = true;
+    completionInit = ''
+      autoload -Uz compinit
+      zdump="''${ZDOTDIR:-$HOME}/.zcompdump-''${ZSH_VERSION}"
+      sig="''${(j: :)''${fpath:A}}"
+      if [[ -f "$zdump" && -r "$zdump.sig" && "$(<$zdump.sig)" == "$sig" ]]; then
+        compinit -C -d "$zdump"          # trusted cache: no audit, no rescan
+      else
+        compinit -u -d "$zdump"          # refresh; -u = use all dirs, never prompt or drop any
+        print -r -- "$sig" >| "$zdump.sig"
+      fi
+      # Compile the dump to bytecode so loading it stays fast.
+      if [[ -s "$zdump" && ( ! -s "$zdump.zwc" || "$zdump" -nt "$zdump.zwc" ) ]]; then
+        zcompile "$zdump"
+      fi
+      unset zdump sig
+    '';
     syntaxHighlighting.enable = true;
     autosuggestion.enable = true;
     history = {
@@ -112,26 +128,34 @@ in
       "....." = "../../../..";
     };
 
-    initContent = lib.mkAfter ''
-      zstyle ':completion:*' rehash true
+    initContent = lib.mkMerge [
+      (lib.mkOrder 505 ''
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
 
-      function take() {
-        mkdir -p -- "$1" && cd -- "$1"
-      }
+      (lib.mkAfter ''
+          zstyle ':completion:*' rehash true
 
-      function nix-root() {
-        local target
-        target="$(readlink "$(command -v "$1")")"
-        print -r -- "''${target:h:h}"
-      }
+        function take() {
+          mkdir -p -- "$1" && cd -- "$1"
+        }
 
-      function clear-scrollback() {
-        printf '\033[H\033[2J\033[3J'
-        zle .reset-prompt
-      }
+        function nix-root() {
+          local target
+          target="$(readlink "$(command -v "$1")")"
+          print -r -- "''${target:h:h}"
+        }
 
-      zle -N clear-scrollback
-      bindkey '^L' clear-scrollback
-    '';
+        function clear-scrollback() {
+          printf '\033[H\033[2J\033[3J'
+          zle .reset-prompt
+        }
+
+        zle -N clear-scrollback
+        bindkey '^L' clear-scrollback
+      '')
+    ];
   };
 }
