@@ -23,6 +23,7 @@
         set -s set-clipboard on
         set -g renumber-windows on
         setw -g pane-base-index 1
+        set -g extended-keys always
       '';
     };
 
