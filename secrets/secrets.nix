@@ -27,6 +27,7 @@ let
     "backblaze-b2-autorestic-env.age"
     "tailscale-authkey.age"
     "cloudflare-dns-token.age"
+    "telegram-bot-token.age"
   ];
 in
 builtins.listToAttrs (

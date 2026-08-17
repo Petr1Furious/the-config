@@ -383,6 +383,15 @@ in
       autoresticFlock = "${autoresticDir}/.autorestic.flock";
       flock = lib.getExe' pkgs.util-linux "flock";
 
+      heartbeatFile = "${config.monitoring.textfileDirectory}/autorestic-cron.prom";
+      writeHeartbeat = pkgs.writeShellScript "autorestic-cron-heartbeat" ''
+        set -euo pipefail
+        tmp=$(mktemp "${config.monitoring.textfileDirectory}/.autorestic-cron.XXXXXX")
+        chmod 0644 "$tmp"
+        printf 'autorestic_cron_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$tmp"
+        mv -f "$tmp" "${heartbeatFile}"
+      '';
+
       cleanLocalLock = pkgs.writeShellScript "autorestic-clean-local-lock" ''
         set -euo pipefail
         LOCK="${autoresticLocalLock}"
@@ -524,6 +533,7 @@ in
             "${cleanLocalLock}"
           ]
           ++ lib.optionals (ensureRcloneConfig != null) [ "${ensureRcloneConfig}" ];
+          ExecStartPost = "${writeHeartbeat}";
         }
         // lib.optionalAttrs (backendEnvironmentFiles != [ ]) {
           EnvironmentFile = backendEnvironmentFiles;
@@ -616,6 +626,27 @@ in
         };
         unitConfig.Description = "Timer for autorestic-prune";
       };
+
+      services.prometheus.ruleFiles = [
+        (pkgs.writeText "autorestic-backup-alerts.rules.yml" ''
+          groups:
+            - name: autorestic-backup
+              rules:
+                - alert: AutoresticBackupStale
+                  expr: time() - autorestic_cron_last_success_timestamp_seconds > 26 * 3600
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: "autorestic-cron has not completed successfully in over 26h"
+                - alert: AutoresticBackupMetricMissing
+                  expr: absent(autorestic_cron_last_success_timestamp_seconds)
+                  for: 30m
+                  labels:
+                    severity: critical
+                  annotations:
+                    summary: "autorestic-cron heartbeat metric is missing entirely"
+        '')
+      ];
     }
   );
 }
