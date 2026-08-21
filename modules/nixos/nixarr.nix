@@ -189,6 +189,9 @@ in
     from = [
       "/srv/media/.state/nixarr"
     ];
+    options.backup.exclude = [
+      "/srv/media/.state/nixarr/jellyfin/cache"
+    ];
   };
 
   caddy.proxies = [
