@@ -22,7 +22,6 @@
       "raycast"
       "iina"
       "orbstack"
-      "bettertouchtool"
       "tailscale-app"
       "linearmouse"
     ];
