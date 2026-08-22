@@ -3,8 +3,6 @@
 {
   imports = [ ../../modules/darwin/common.nix ];
 
-  nix.linux-builder.enable = true;
-
   system.primaryUser = "petrtsopa";
   users.users.petrtsopa.home = "/Users/petrtsopa";
 
