@@ -134,5 +134,18 @@
         user = "petrtsopa";
       };
 
+      homeConfigurations.minecraft = home-manager.lib.homeManagerConfiguration {
+        pkgs = mkPkgs nixpkgs "x86_64-linux";
+        extraSpecialArgs = commonSpecialArgs // {
+          pkgs-unstable = mkPkgsUnstable "x86_64-linux";
+        };
+        modules = [
+          ./home/profiles/minecraft.nix
+          {
+            home.username = "minecraft";
+            home.homeDirectory = "/home/minecraft";
+          }
+        ];
+      };
     };
 }
