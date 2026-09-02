@@ -16,7 +16,6 @@ let
 
   singBoxGeneratorPort = 18081;
   singBoxCfgBase = ./sing-box-config-base.json;
-  singBoxCfgBase114 = ./sing-box-config-base-1.11.4.json;
   singBoxCfgGenerator = ./sing-box-config-generator.py;
 
   websiteRoot = ./.;
@@ -26,20 +25,11 @@ let
   allExceptRu = {
     routing = "all-except-ru";
   };
-  allExceptRuLegacy = allExceptRu // {
-    legacy = true;
-  };
   blocked = {
     routing = "blocked";
   };
-  blockedLegacy = blocked // {
-    legacy = true;
-  };
   ruOnly = {
     routing = "ru-only";
-  };
-  ruOnlyLegacy = ruOnly // {
-    legacy = true;
   };
   serverProxy = {
     routing = "all-including-ru";
@@ -52,19 +42,11 @@ let
     "simple-all.json" = allExceptRu;
     "sing-box-proxy-all-except-ru.json" = allExceptRu;
 
-    "all-except-ru-legacy.json" = allExceptRuLegacy;
-    "all-legacy.json" = allExceptRuLegacy;
-    "simple-all-legacy.json" = allExceptRuLegacy;
-
     "blocked.json" = blocked;
     "simple-blocked.json" = blocked;
     "sing-box-proxy-blocked.json" = blocked;
 
-    "blocked-legacy.json" = blockedLegacy;
-    "simple-blocked-legacy.json" = blockedLegacy;
-
     "ru-only.json" = ruOnly;
-    "ru-only-legacy.json" = ruOnlyLegacy;
     "server-proxy.json" = serverProxy;
   };
   singBoxShortcutsFile = pkgs.writeText "sing-box-shortcuts.json" (builtins.toJSON singBoxShortcuts);
@@ -112,8 +94,11 @@ in
     after = [ "network.target" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --legacy-file ${singBoxCfgBase114} --shortcuts-file ${singBoxShortcutsFile} --state-dir ${meowconnectStateDir} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate";
-      Environment = "PYTHONPATH=${websiteRoot}";
+      ExecStart = "${lib.getExe pkgs.python3} ${singBoxCfgGenerator} --file ${singBoxCfgBase} --shortcuts-file ${singBoxShortcutsFile} --state-dir ${meowconnectStateDir} --host 127.0.0.1 --port ${toString singBoxGeneratorPort} --path /sing-box/generate";
+      Environment = [
+        "PYTHONPATH=${websiteRoot}"
+        "PYTHONUNBUFFERED=1"
+      ];
       WorkingDirectory = "${websiteRoot}";
       EnvironmentFile = config.age.secrets.meowconnect-env.path;
       Restart = "on-failure";

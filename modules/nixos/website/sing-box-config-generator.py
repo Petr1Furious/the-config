@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import ipaddress
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -11,19 +12,15 @@ from meowconnect.client import MeowConnectClient
 from meowconnect.config import load_client_config
 from meowconnect.fetch import fetch_raw_responses
 
-URLTEST_INTERVAL = "15s"
+URLTEST_INTERVAL = "3m"
 URLTEST_TOLERANCE = 200
 AUTOMATIC_OUTBOUND_TAG = "Automatic"
 SKIP_OUTBOUND_TYPES = frozenset({"direct", "block", "dns", "selector", "urltest"})
 RUSSIAN_SERVER_NAME = "russia"
 ROUTING_MODES = frozenset({"all-except-ru", "all-including-ru", "blocked", "ru-only"})
 
-# Stripped by "all-including-ru". geosite-private stays direct in every mode:
-# RFC1918 and loopback must never be tunnelled.
 RU_DIRECT_RULE_SETS = frozenset({"geosite-ru-available-only-inside", "geoip-ru"})
-RU_DIRECT_DOMAIN_SUFFIXES = frozenset(
-    {"ru", "su", "xn--p1ai", "moscow", "xn--80adxhks", "xn--p1acf"}
-)
+RU_DOMAIN_SUFFIXES = ("ru", "su", "xn--p1ai", "moscow", "xn--80adxhks", "xn--p1acf")
 
 
 def is_truthy(val: str | None) -> bool:
@@ -78,19 +75,55 @@ def outbound_tag(connection: dict) -> str:
     return str(gate_id)
 
 
-def extract_proxy_outbound(response: object, gate_id: int, tag: str) -> dict:
+class UnusableGate(ValueError):
+    """One gate cannot yield a dialable outbound; the rest of the pool still can."""
+
+
+def is_publicly_routable(address: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return True
+    return not (
+        ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified
+    )
+
+
+def address_sort_key(address: str) -> tuple[int, object]:
+    ip = ipaddress.ip_address(address)
+    return (ip.version, ip)
+
+
+def gateway_addresses(connection: dict) -> list[str]:
+    gateways = connection.get("gateways")
+    if not isinstance(gateways, list):
+        return []
+    addresses = {
+        gateway["address"].strip()
+        for gateway in gateways
+        if isinstance(gateway, dict)
+        and isinstance(gateway.get("address"), str)
+        and gateway["address"].strip()
+        and is_publicly_routable(gateway["address"].strip())
+    }
+
+    return sorted(addresses, key=address_sort_key)
+
+
+def extract_proxy_outbound(response: object, connection: dict, tag: str) -> dict:
+    gate_id = connection["id"]
     if not isinstance(response, dict):
-        raise ValueError(
+        raise UnusableGate(
             f"cached connect response for server {gate_id} is not an object"
         )
     configuration = response.get("configuration")
     if not isinstance(configuration, dict):
-        raise ValueError(
+        raise UnusableGate(
             f"cached connect response for server {gate_id} has no configuration"
         )
     outbounds = configuration.get("outbounds")
     if not isinstance(outbounds, list):
-        raise ValueError(f"server {gate_id} configuration has no outbounds list")
+        raise UnusableGate(f"server {gate_id} configuration has no outbounds list")
     for raw_outbound in outbounds:
         if not isinstance(raw_outbound, dict):
             continue
@@ -98,8 +131,17 @@ def extract_proxy_outbound(response: object, gate_id: int, tag: str) -> dict:
             continue
         outbound = deep_clone(raw_outbound)
         outbound["tag"] = tag
+        server = outbound.get("server")
+        if isinstance(server, str) and not is_publicly_routable(server):
+            candidates = gateway_addresses(connection)
+            if not candidates:
+                raise UnusableGate(
+                    f"server {gate_id} advertises unroutable address {server} "
+                    "and lists no public gateway to use instead"
+                )
+            outbound["server"] = candidates[0]
         return outbound
-    raise ValueError(f"server {gate_id} configuration has no proxy outbound")
+    raise UnusableGate(f"server {gate_id} configuration has no proxy outbound")
 
 
 def build_meowconnect_outbounds(
@@ -117,7 +159,7 @@ def build_meowconnect_outbounds(
     )
     matched: set[str] = set()
     available_names: list[str] = []
-    selected: list[tuple[int, str, object]] = []
+    selected: list[tuple[dict, str, object]] = []
 
     for connection in connections:
         if not isinstance(connection, dict) or not isinstance(
@@ -141,7 +183,7 @@ def build_meowconnect_outbounds(
 
         if should_select and str(gate_id) in responses:
             selected.append(
-                (gate_id, outbound_tag(connection), responses[str(gate_id)])
+                (connection, outbound_tag(connection), responses[str(gate_id)])
             )
 
     if requested is not None:
@@ -154,12 +196,21 @@ def build_meowconnect_outbounds(
                 + ", ".join(available_names)
             )
 
-    outbounds = [
-        extract_proxy_outbound(response, gate_id, tag)
-        for gate_id, tag, response in selected
-    ]
+    outbounds = []
+    skipped: list[str] = []
+    for connection, tag, response in selected:
+        try:
+            outbounds.append(extract_proxy_outbound(response, connection, tag))
+        except UnusableGate as exc:
+            skipped.append(f"{tag} ({exc})")
+    if skipped:
+        print("Skipped unusable MeowConnect gates: " + "; ".join(skipped))
     if not outbounds:
-        raise ValueError("Selected MeowConnect servers have no cached responses")
+        raise ValueError(
+            "No usable MeowConnect gates; skipped " + "; ".join(skipped)
+            if skipped
+            else "Selected MeowConnect servers have no cached responses"
+        )
     return outbounds
 
 
@@ -336,14 +387,6 @@ RUSSIAN_DOMAIN_RULE_SETS = (
     "geosite-ru-available-only-inside",
     "geosite-ru-blocked",
 )
-RUSSIAN_DOMAIN_SUFFIXES = (
-    "ru",
-    "su",
-    "xn--p1ai",
-    "moscow",
-    "xn--80adxhks",
-    "xn--p1acf",
-)
 
 
 def rule_set_values(rule: dict) -> set[str]:
@@ -363,10 +406,8 @@ def configure_ru_only(config):
             for rule in rules:
                 if not isinstance(rule, dict):
                     continue
-                if (
-                    rule_set_values(rule) & RUSSIAN_RULE_SETS
-                    or "domain_suffix" in rule
-                    and rule.get("outbound") == "direct"
+                if rule_set_values(rule) & RUSSIAN_RULE_SETS or (
+                    "domain_suffix" in rule and rule.get("outbound") == "direct"
                 ):
                     rule["outbound"] = "proxy"
 
@@ -390,7 +431,7 @@ def configure_ru_only(config):
                 "server": "remote-doh-1",
             },
             {
-                "domain_suffix": list(RUSSIAN_DOMAIN_SUFFIXES),
+                "domain_suffix": list(RU_DOMAIN_SUFFIXES),
                 "server": "remote-doh-1",
             },
         ]
@@ -411,7 +452,7 @@ def remove_ru_direct_rules(config):
                 isinstance(rule, dict)
                 and rule.get("outbound") == "direct"
                 and rule.get("domain_suffix")
-                and set(rule["domain_suffix"]) <= RU_DIRECT_DOMAIN_SUFFIXES
+                and set(rule["domain_suffix"]) <= set(RU_DOMAIN_SUFFIXES)
             )
         ]
     if isinstance(route.get("rule_set"), list):
@@ -425,6 +466,47 @@ def remove_ru_direct_rules(config):
         ]
 
 
+def set_direct_dns(config):
+    dns = config.get("dns")
+    if isinstance(dns, dict):
+        dns["final"] = "local-dns"
+    route = config.get("route")
+    if isinstance(route, dict) and "default_domain_resolver" in route:
+        route["default_domain_resolver"] = "local-dns"
+
+
+def collect_rule_set_references(value, seen: set[str]):
+    if isinstance(value, dict):
+        rule_sets = value.get("rule_set")
+        if isinstance(rule_sets, str):
+            seen.add(rule_sets)
+        elif isinstance(rule_sets, list):
+            seen.update(item for item in rule_sets if isinstance(item, str))
+        for item in value.values():
+            collect_rule_set_references(item, seen)
+    elif isinstance(value, list):
+        for item in value:
+            collect_rule_set_references(item, seen)
+
+
+def prune_unused_rule_sets(config):
+    route = config.get("route")
+    if not isinstance(route, dict) or not isinstance(route.get("rule_set"), list):
+        return
+
+    referenced: set[str] = set()
+    collect_rule_set_references(route.get("rules"), referenced)
+    dns = config.get("dns")
+    if isinstance(dns, dict):
+        collect_rule_set_references(dns.get("rules"), referenced)
+
+    route["rule_set"] = [
+        definition
+        for definition in route["rule_set"]
+        if not isinstance(definition, dict) or definition.get("tag") in referenced
+    ]
+
+
 def configure_routing(config, routing: str):
     if routing in {"all-except-ru", "all-including-ru"}:
         set_route_final(config, "proxy")
@@ -435,6 +517,8 @@ def configure_routing(config, routing: str):
         remove_ru_direct_rules(config)
     if routing == "ru-only":
         configure_ru_only(config)
+    if routing == "blocked":
+        set_direct_dns(config)
 
 
 def set_inbounds(config, mode: str):
@@ -448,29 +532,19 @@ def set_inbounds(config, mode: str):
     else:
         allowed_types = {"tun"}
 
-    selected: list[dict] = []
-    for inbound in inbounds:
-        if not isinstance(inbound, dict):
-            continue
-        if inbound.get("type") in allowed_types:
-            selected.append(dict(inbound))
-
-    if selected:
-        config["inbounds"] = selected
-    else:
-        config["inbounds"] = [
-            dict(inbound) if isinstance(inbound, dict) else inbound
-            for inbound in inbounds
-        ]
-
-    selected_inbound_tags = {
-        inbound.get("tag")
-        for inbound in config.get("inbounds", [])
-        if isinstance(inbound, dict)
-        and isinstance(inbound.get("tag"), str)
-        and inbound.get("tag")
-    }
-    trim_route_rules_for_inbounds(config, selected_inbound_tags)
+    config["inbounds"] = [
+        dict(inbound)
+        for inbound in inbounds
+        if isinstance(inbound, dict) and inbound.get("type") in allowed_types
+    ]
+    trim_route_rules_for_inbounds(
+        config,
+        {
+            inbound["tag"]
+            for inbound in config["inbounds"]
+            if isinstance(inbound.get("tag"), str) and inbound["tag"]
+        },
+    )
 
 
 def set_proxy_inbounds_listen(config, listen: str):
@@ -591,7 +665,7 @@ def params_from_mapping(raw: object) -> dict[str, list[str]]:
 class Handler(BaseHTTPRequestHandler):
     route_path = "/"
     refresh_path = "/sing-box-refresh/"
-    templates: dict[str, object] = {}
+    template: object = None
     shortcuts: dict[str, object] = {}
     service: GeneratorService | None = None
 
@@ -603,18 +677,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "Not Found")
             return
         except ValueError as exc:
-            self.send_error(400, str(exc))
+            self.send_error(400, None, str(exc))
             return
 
-        template_key = (
-            "legacy" if is_truthy(first(params, "legacy", None)) else "default"
-        )
-        template = self.templates.get(template_key)
-        if template is None:
-            self.send_error(400, "Legacy config template is not configured")
-            return
-
-        cfg = deep_clone(template)
+        cfg = deep_clone(self.template)
         try:
             routing_raw = first(params, "routing", "blocked")
             routing = (routing_raw or "blocked").strip().lower()
@@ -644,10 +710,10 @@ class Handler(BaseHTTPRequestHandler):
                 else "direct",
             )
         except ValueError as exc:
-            self.send_error(400, str(exc))
+            self.send_error(400, None, str(exc))
             return
         except FileNotFoundError as exc:
-            self.send_error(503, str(exc))
+            self.send_error(503, None, str(exc))
             return
 
         inbound_raw = first(params, "inbound", "tun")
@@ -662,6 +728,8 @@ class Handler(BaseHTTPRequestHandler):
 
         if is_truthy(first(params, "allow_ads", None)):
             allow_ads(cfg)
+
+        prune_unused_rule_sets(cfg)
 
         body = json.dumps(cfg, indent=4, ensure_ascii=False).encode("utf-8")
         self.send_response(200)
@@ -682,7 +750,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             meta = self._service().refresh()
         except Exception as exc:
-            self.send_error(500, str(exc))
+            self.send_error(500, None, str(exc))
             return
         self._json_response(200, meta)
 
@@ -739,7 +807,6 @@ def load_json(path: str):
 def main():
     ap = argparse.ArgumentParser(description="sing-box config templating HTTP server")
     ap.add_argument("--file", required=True, help="Path to base sing-box config (JSON)")
-    ap.add_argument("--legacy-file", help="Path to legacy base sing-box config (JSON)")
     ap.add_argument(
         "--shortcuts-file",
         required=True,
@@ -758,9 +825,7 @@ def main():
     args = ap.parse_args()
 
     Handler.route_path = args.path
-    Handler.templates = {"default": load_json(args.file)}
-    if args.legacy_file:
-        Handler.templates["legacy"] = load_json(args.legacy_file)
+    Handler.template = load_json(args.file)
     shortcuts = load_json(args.shortcuts_file)
     if not isinstance(shortcuts, dict):
         raise SystemExit("Shortcut manifest must be a JSON object")
