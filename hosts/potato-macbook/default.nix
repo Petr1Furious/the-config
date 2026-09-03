@@ -22,6 +22,7 @@
       "orbstack"
       "tailscale-app"
       "linearmouse"
+      "sfm"
     ];
   };
 }
