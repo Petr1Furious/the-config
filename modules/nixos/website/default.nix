@@ -31,6 +31,9 @@ let
   ruOnly = {
     routing = "ru-only";
   };
+  allIncludingRu = {
+    routing = "all-including-ru";
+  };
   serverProxy = {
     routing = "all-including-ru";
     inbound = "proxy";
@@ -48,6 +51,8 @@ let
 
     "ru-only.json" = ruOnly;
     "server-proxy.json" = serverProxy;
+
+    "all-including-ru.json" = allIncludingRu;
   };
   singBoxShortcutsFile = pkgs.writeText "sing-box-shortcuts.json" (builtins.toJSON singBoxShortcuts);
 

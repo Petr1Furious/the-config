@@ -56,6 +56,12 @@
         "final": "remote-doh-1",
         "strategy": "prefer_ipv4"
     },
+    "http_clients": [
+        {
+            "tag": "rule-set-download",
+            "detour": "proxy"
+        }
+    ],
     "inbounds": [
         {
             "type": "socks",
@@ -87,6 +93,7 @@
         "auto_detect_interface": true,
         "final": "direct",
         "default_domain_resolver": "remote-doh-1",
+        "default_http_client": "rule-set-download",
         "rules": [
             {
                 "inbound": "socks-in",
@@ -183,92 +190,79 @@
                 "tag": "geosite-private",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-private.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-private.srs"
             },
             {
                 "tag": "geosite-category-ads-all",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs"
             },
             {
                 "tag": "geosite-ru-available-only-inside",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs"
             },
             {
                 "tag": "geosite-ru-blocked",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked.srs"
             },
             {
                 "tag": "geoip-ru",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru.srs"
             },
             {
                 "tag": "geoip-ru-blocked",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs"
             },
             {
                 "tag": "geoip-ru-blocked-community",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs"
             },
             {
                 "tag": "geoip-re-filter",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
-                "download_detour": "proxy"
+                "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs"
             },
             {
                 "tag": "geosite-phishing",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/phishing.srs",
-                "download_detour": "proxy"
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/phishing.srs"
             },
             {
                 "tag": "geoip-phishing",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/phishing.srs",
-                "download_detour": "proxy"
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/phishing.srs"
             },
             {
                 "tag": "geosite-malware",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/malware.srs",
-                "download_detour": "proxy"
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geosite/malware.srs"
             },
             {
                 "tag": "geoip-malware",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/malware.srs",
-                "download_detour": "proxy"
+                "url": "https://github.com/KaringX/karing-ruleset/raw/refs/heads/sing/geo/geoip/malware.srs"
             },
             {
                 "tag": "geosite-adguard-list",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://github.com/xmdhs/sing-box-ruleset/raw/refs/heads/rule-set/AdGuardSDNSFilterSingBox.srs",
-                "download_detour": "proxy"
+                "url": "https://github.com/xmdhs/sing-box-ruleset/raw/refs/heads/rule-set/AdGuardSDNSFilterSingBox.srs"
             }
         ]
     },
@@ -276,7 +270,7 @@
         "cache_file": {
             "enabled": true,
             "store_fakeip": false,
-            "store_rdrc": true
+            "store_dns": true
         }
     }
 }

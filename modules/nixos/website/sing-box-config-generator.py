@@ -320,7 +320,7 @@ def allow_ads(config):
         ]
 
 
-PROXY_REFERENCE_KEYS = frozenset({"outbound", "detour", "download_detour", "final"})
+PROXY_REFERENCE_KEYS = frozenset({"outbound", "detour", "final"})
 
 
 def replace_proxy_references(value, outbound_tag: str):
@@ -398,6 +398,12 @@ def rule_set_values(rule: dict) -> set[str]:
     return set()
 
 
+def set_rule_set_detour(config, detour: str):
+    for client in config.get("http_clients", []):
+        if isinstance(client, dict):
+            client["detour"] = detour
+
+
 def configure_ru_only(config):
     route = config.get("route")
     if isinstance(route, dict):
@@ -411,11 +417,7 @@ def configure_ru_only(config):
                 ):
                     rule["outbound"] = "proxy"
 
-        definitions = route.get("rule_set")
-        if isinstance(definitions, list):
-            for definition in definitions:
-                if isinstance(definition, dict) and "download_detour" in definition:
-                    definition["download_detour"] = "direct"
+    set_rule_set_detour(config, "direct")
 
     dns = config.get("dns")
     if not isinstance(dns, dict):
