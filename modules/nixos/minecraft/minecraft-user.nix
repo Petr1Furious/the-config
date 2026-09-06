@@ -107,7 +107,7 @@ in
   caddy.proxies = [
     {
       host = "mmap.hseminecraft.ru";
-      target = "http://localhost:8100";
+      target = "http://localhost:8101";
     }
     {
       host = "metro.hseminecraft.ru";
@@ -115,7 +115,7 @@ in
     }
     {
       host = "map.hseminecraft.ru";
-      target = "http://localhost:8101";
+      target = "http://localhost:8100";
     }
     {
       host = "upload.hseminecraft.ru";
