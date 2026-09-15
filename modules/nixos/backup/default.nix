@@ -8,6 +8,7 @@
 {
   imports = [
     ./autorestic.nix
+    ./admin.nix
   ];
 
   backup.enable = true;
