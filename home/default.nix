@@ -25,8 +25,6 @@
   home.packages = with pkgs; [
     bmon
     btop
-    pkgs-unstable.claude-code
-    pkgs-unstable.codex
     fd
     htop
     jq

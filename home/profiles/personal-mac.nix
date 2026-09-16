@@ -8,6 +8,8 @@
 
   home.packages = with pkgs; [
     autorestic
+    pkgs-unstable.claude-code
+    pkgs-unstable.codex
     rclone
     restic
     zstd
