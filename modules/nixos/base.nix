@@ -19,6 +19,8 @@
     settings.PasswordAuthentication = false;
   };
 
+  programs.mosh.enable = true;
+
   services.fail2ban.enable = true;
 
   security.sudo.wheelNeedsPassword = false;
