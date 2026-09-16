@@ -39,6 +39,14 @@ let
     inbound = "proxy";
     servers = "Netherlands";
   };
+  browserProxy = {
+    routing = "all-including-ru";
+    inbound = "proxy";
+    servers = "Denmark";
+    socks_port = 10818;
+    http_port = 10819;
+    allow_ads = true;
+  };
   singBoxShortcuts = {
     "all-except-ru.json" = allExceptRu;
     "all.json" = allExceptRu;
@@ -51,6 +59,7 @@ let
 
     "ru-only.json" = ruOnly;
     "server-proxy.json" = serverProxy;
+    "browser-proxy.json" = browserProxy;
 
     "all-including-ru.json" = allIncludingRu;
   };
@@ -119,7 +128,11 @@ in
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${lib.getExe pkgs.curl} -fsS -X POST http://127.0.0.1:${toString singBoxGeneratorPort}/sing-box-refresh/";
-      ExecStartPost = "${pkgs.systemd}/bin/systemctl start sing-box-proxy-sync.service";
+      ExecStartPost = "${pkgs.systemd}/bin/systemctl start ${
+        lib.concatMapStringsSep " " (name: "${name}-proxy-sync.service") (
+          lib.attrNames config.proxy.instances
+        )
+      }";
     };
   };
 

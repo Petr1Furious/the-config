@@ -558,6 +558,25 @@ def set_proxy_inbounds_listen(config, listen: str):
             inbound["listen"] = listen
 
 
+PROXY_PORT_PARAMS = {"socks": "socks_port", "http": "http_port"}
+
+
+def set_proxy_inbound_ports(config, params: dict[str, list[str]]):
+    inbounds = config.get("inbounds")
+    if not isinstance(inbounds, list):
+        return
+    for inbound in inbounds:
+        if not isinstance(inbound, dict):
+            continue
+        param = PROXY_PORT_PARAMS.get(inbound.get("type"))
+        raw = first(params, param, None) if param else None
+        if raw is None:
+            continue
+        if not raw.isdigit() or not 0 < int(raw) < 65536:
+            raise ValueError(f"Bad {param} value; use a port number")
+        inbound["listen_port"] = int(raw)
+
+
 def _filter_rule_inbound_value(value, selected_tags: set[str]):
     if isinstance(value, str):
         return value if value in selected_tags else None
@@ -724,6 +743,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(400, "Bad inbound value; use tun or proxy")
             return
         set_inbounds(cfg, inbound_mode)
+
+        try:
+            set_proxy_inbound_ports(cfg, params)
+        except ValueError as exc:
+            self.send_error(400, None, str(exc))
+            return
 
         if is_truthy(first(params, "proxy_public", None)):
             set_proxy_inbounds_listen(cfg, "0.0.0.0")
