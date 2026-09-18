@@ -29,7 +29,7 @@
 
     programs.zsh.initContent = lib.mkIf config.shell.autoAttachTmux (
       lib.mkBefore ''
-        if [[ -o interactive && -n "$SSH_TTY" && -z "$TMUX" ]]; then
+        if [[ -o interactive && -n "$SSH_TTY" && -z "$TMUX" && -z "$NO_TMUX" ]]; then
           exec ${lib.getExe pkgs.tmux} new-session -A -s main
         fi
       ''

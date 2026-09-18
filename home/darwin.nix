@@ -22,9 +22,10 @@ lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
 
     settings = {
       keybind = [
-        "ctrl+shift+p=text:ssh potato-server\\n"
-        "ctrl+shift+m=text:ssh potato-server-mc\\n"
-        "ctrl+shift+h=text:ssh home-server\\n"
+        "ctrl+shift+p=text:mosh potato-server\\n"
+        "ctrl+shift+alt+p=text:mosh --server='NO_TMUX=1 mosh-server' potato-server\\n"
+        "ctrl+shift+m=text:mosh potato-server-mc\\n"
+        "ctrl+shift+h=text:mosh home-server\\n"
       ];
       shell-integration-features = "cursor,sudo,ssh-env,ssh-terminfo";
     };

@@ -29,6 +29,7 @@
     htop
     jq
     manix
+    mosh
     ncdu
     nix-tree
     nixfmt

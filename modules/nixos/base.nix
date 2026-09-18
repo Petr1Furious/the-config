@@ -16,7 +16,10 @@
 
   services.openssh = {
     enable = true;
-    settings.PasswordAuthentication = false;
+    settings = {
+      PasswordAuthentication = false;
+      AcceptEnv = [ "NO_TMUX" ];
+    };
   };
 
   programs.mosh.enable = true;
