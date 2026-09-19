@@ -19,6 +19,7 @@
       "notunes"
       "raycast"
       "iina"
+      "kde-connect"
       "orbstack"
       "tailscale-app"
       "linearmouse"
