@@ -13,7 +13,7 @@ in
 {
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud34;
+    package = pkgs.nextcloud35;
     hostName = hostName;
     home = nextCloudHome;
     maxUploadSize = "16G";
@@ -23,7 +23,6 @@ in
 
     extraApps = {
       inherit (config.services.nextcloud.package.packages.apps)
-        news
         contacts
         calendar
         tasks
