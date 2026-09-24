@@ -13,7 +13,10 @@ in
   programs.atuin = {
     enable = true;
     flags = [ "--disable-up-arrow" ];
-    settings.enter_accept = false;
+    settings = {
+      enter_accept = false;
+      search_mode = "fulltext";
+    };
   };
 
   programs.bat.enable = true;
