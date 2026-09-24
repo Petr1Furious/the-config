@@ -13,6 +13,10 @@
 
   home.packages = [ pkgs-unstable.claude-code ];
 
+  home.sessionVariablesExtra = ''
+    export PATH="$PATH:/usr/sbin:/sbin"
+  '';
+
   programs.git.settings.user = {
     name = "Petr Tsopa";
     email = "petrtsopa03@gmail.com";
