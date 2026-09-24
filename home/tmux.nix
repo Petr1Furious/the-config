@@ -21,6 +21,9 @@
       plugins = [ pkgs.tmuxPlugins.sensible ];
       extraConfig = ''
         set -s set-clipboard on
+        # mosh only forwards OSC 52 with an explicit "c" selection; tmux sends an
+        # empty one. %p1%.0s must stay: without it tparm drops the whole sequence.
+        set -as terminal-overrides ',xterm*:Ms=\E]52;c%p1%.0s;%p2%s\7'
         set -g renumber-windows on
         setw -g pane-base-index 1
         set -g extended-keys always

@@ -134,6 +134,20 @@
         user = "petrtsopa";
       };
 
+      homeConfigurations."petrtsopa@pi" = home-manager.lib.homeManagerConfiguration {
+        pkgs = mkPkgs nixpkgs "aarch64-linux";
+        extraSpecialArgs = commonSpecialArgs // {
+          pkgs-unstable = mkPkgsUnstable "aarch64-linux";
+        };
+        modules = [
+          ./home/profiles/pi.nix
+          {
+            home.username = "petrtsopa";
+            home.homeDirectory = "/home/petrtsopa";
+          }
+        ];
+      };
+
       homeConfigurations.minecraft = home-manager.lib.homeManagerConfiguration {
         pkgs = mkPkgs nixpkgs "x86_64-linux";
         extraSpecialArgs = commonSpecialArgs // {
