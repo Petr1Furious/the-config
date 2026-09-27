@@ -5,6 +5,7 @@
     ../bme688-exporter.nix
     ../core.nix
     ../linux.nix
+    ../pi-display.nix
   ];
 
   targets.genericLinux = {
