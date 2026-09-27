@@ -17,12 +17,93 @@ let
 
   telegramChatId = 702629742;
 
+  nginxUrl = "http://127.0.0.1:${toString config.setup.nginxPort}";
+
   httpProbeTargets = [
     {
       service = "tgauth";
       url = "http://127.0.0.1:8130/";
     }
+    {
+      service = "jellyfin";
+      url = "http://127.0.0.1:8096/health";
+    }
+    {
+      service = "seerr";
+      url = "http://127.0.0.1:5055/api/v1/status";
+    }
+    {
+      service = "sonarr";
+      url = "http://127.0.0.1:8989/ping";
+    }
+    {
+      service = "radarr";
+      url = "http://127.0.0.1:7878/ping";
+    }
+    {
+      service = "prowlarr";
+      url = "http://127.0.0.1:9696/ping";
+    }
+    {
+      service = "bazarr";
+      url = "http://127.0.0.1:6767/api/system/ping";
+    }
+    {
+      service = "qbittorrent";
+      url = "http://127.0.0.1:${toString config.nixarr.qbittorrent.qui.internalPort}/api/v2/app/version";
+    }
+    {
+      service = "qui";
+      url = "http://127.0.0.1:5252/health";
+    }
+    {
+      service = "vaultwarden";
+      url = "http://127.0.0.1:8222/alive";
+    }
+    {
+      service = "immich";
+      url = "http://localhost:${toString config.services.immich.port}/api/server/ping";
+    }
+    {
+      service = "nextcloud";
+      url = "${nginxUrl}/status.php";
+      host = "nextcloud.petr1furious.me";
+      failIfBodyMatches = [ ''"maintenance":\s*true'' ];
+      failIfBodyNotMatches = [ ''"productname":\s*"Nextcloud"'' ];
+    }
+    {
+      service = "jitsi";
+      url = "${nginxUrl}/http-bind";
+      host = "jitsi.petr1furious.me";
+      failIfBodyNotMatches = [ "Prosody" ];
+    }
+    {
+      service = "jitsi-videobridge";
+      url = "http://127.0.0.1:8080/about/health";
+    }
+    {
+      service = "jicofo";
+      url = "http://127.0.0.1:8888/about/version";
+    }
+    {
+      service = "grafana";
+      url = "http://127.0.0.1:${toString grafanaPort}/api/health";
+    }
+    {
+      service = "hseminecraft-site";
+      url = "http://127.0.0.1:8001/";
+    }
+    {
+      service = "hseminecraft-map";
+      url = "http://127.0.0.1:8100/";
+    }
+    {
+      service = "hseminecraft-mmap";
+      url = "http://127.0.0.1:8101/";
+    }
   ];
+
+  probeModule = t: "http_${t.service}";
 in
 {
   options.monitoring.textfileDirectory = lib.mkOption {
@@ -54,14 +135,29 @@ in
         enable = true;
         listenAddress = "localhost";
         port = blackboxPort;
-        configFile = pkgs.writeText "blackbox.yml" ''
-          modules:
-            http_2xx:
-              prober: http
-              timeout: 5s
-              http:
-                method: GET
-        '';
+        configFile = pkgs.writeText "blackbox.yml" (
+          builtins.toJSON {
+            modules = lib.listToAttrs (
+              map (t: {
+                name = probeModule t;
+                value = {
+                  prober = "http";
+                  timeout = "5s";
+                  http = {
+                    method = "GET";
+                  }
+                  // lib.optionalAttrs (t ? host) { headers.Host = t.host; }
+                  // lib.optionalAttrs (t ? failIfBodyMatches) {
+                    fail_if_body_matches_regexp = t.failIfBodyMatches;
+                  }
+                  // lib.optionalAttrs (t ? failIfBodyNotMatches) {
+                    fail_if_body_not_matches_regexp = t.failIfBodyNotMatches;
+                  };
+                };
+              }) httpProbeTargets
+            );
+          }
+        );
       };
 
       scrapeConfigs = [
@@ -76,10 +172,12 @@ in
         {
           job_name = "blackbox-http";
           metrics_path = "/probe";
-          params.module = [ "http_2xx" ];
           static_configs = map (t: {
             targets = [ t.url ];
-            labels.service = t.service;
+            labels = {
+              inherit (t) service;
+              __param_module = probeModule t;
+            };
           }) httpProbeTargets;
           relabel_configs = [
             {
