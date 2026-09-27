@@ -96,6 +96,11 @@ in
             }
           ];
         }
+        {
+          job_name = "bme688";
+          scrape_interval = "30s";
+          static_configs = [ { targets = [ "100.67.147.81:9688" ]; } ];
+        }
       ]
       ++
         map
@@ -158,6 +163,16 @@ in
                   annotations:
                     summary: "{{ $labels.service }} ({{ $labels.instance }}) is not responding over HTTP"
                     description: "blackbox_exporter has not gotten a successful HTTP response from {{ $labels.service }} for 5 minutes."
+            - name: bme688
+              rules:
+                - alert: Bme688SamplesStale
+                  expr: time() - bme688_last_sample_timestamp_seconds > 300
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "BME688 on {{ $labels.instance }} has stopped producing samples"
+                    description: "The exporter still answers, but its last sample is more than 5 minutes old, so the sensor loop is stuck."
         '')
       ];
 
@@ -227,6 +242,12 @@ in
 
     environment.etc."grafana-dashboards/node-exporter-full.json" = {
       source = ./grafana-dashboards/node-exporter-full.json;
+      user = "grafana";
+      group = "grafana";
+    };
+
+    environment.etc."grafana-dashboards/air-quality.json" = {
+      source = ./grafana-dashboards/air-quality.json;
       user = "grafana";
       group = "grafana";
     };

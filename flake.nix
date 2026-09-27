@@ -134,6 +134,10 @@
         user = "petrtsopa";
       };
 
+      packages.aarch64-linux.bme688-exporter =
+        (mkPkgs nixpkgs "aarch64-linux").callPackage ./pkgs/bme688-exporter
+          { };
+
       homeConfigurations."petrtsopa@pi" = home-manager.lib.homeManagerConfiguration {
         pkgs = mkPkgs nixpkgs "aarch64-linux";
         extraSpecialArgs = commonSpecialArgs // {

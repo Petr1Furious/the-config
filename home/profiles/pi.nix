@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ../bme688-exporter.nix
     ../core.nix
     ../linux.nix
   ];
