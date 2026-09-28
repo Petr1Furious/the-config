@@ -38,6 +38,20 @@ if ! id -nG "$USER" | grep -qw i2c; then
   log "added $USER to i2c; log in again for it to apply"
 fi
 
+log "activity LED off"
+config=/boot/firmware/config.txt
+# No act_led_activelow: the Pi 5's LED polarity differs from older boards,
+# and the trigger alone keeps it off.
+if ! grep -qx "dtparam=act_led_trigger=none" "$config"; then
+  printf '\n[all]\ndtparam=act_led_trigger=none\n' | sudo tee -a "$config" >/dev/null
+fi
+
+log "cloud-init off"
+# Imager's first-boot setup is done; otherwise it re-reads its seed every boot.
+if [ -d /etc/cloud ]; then
+  sudo touch /etc/cloud/cloud-init.disabled
+fi
+
 log "Nix"
 if [ ! -x "$NIX_BIN/nix" ]; then
   sh <(curl -fsSL https://nixos.org/nix/install) --daemon --yes

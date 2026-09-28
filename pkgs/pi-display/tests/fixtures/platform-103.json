@@ -1,0 +1,100 @@
+{
+  "data": {
+    "departures": [
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:16:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34564#TA#7#DA#280926#1S#860431103#1T#816#LS#860005301#LT#835#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431103#FT#816#TO#860005301#TT#835#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13486",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "d26974d5cb742315fe72bab69e4213ee",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:31:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34564#TA#8#DA#280926#1S#860431103#1T#831#LS#860005301#LT#850#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431103#FT#831#TO#860005301#TT#850#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13490",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "9e3a4d72a1a242fa8657bea504254b57",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:46:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34564#TA#9#DA#280926#1S#860431103#1T#846#LS#860005301#LT#905#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431103#FT#846#TO#860005301#TT#905#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13494",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "e92ed36953aad1452c38ce135191db99",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T09:01:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34564#TA#10#DA#280926#1S#860431103#1T#901#LS#860005301#LT#920#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431103#FT#901#TO#860005301#TT#920#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13498",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "5cd02a89b871cec68ef2a6c3960d189d",
+        "trafficTypeCode": "070"
+      }
+    ]
+  },
+  "status": 200,
+  "errors": null
+}

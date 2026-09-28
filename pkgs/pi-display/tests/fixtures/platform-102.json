@@ -1,0 +1,108 @@
+{
+  "data": {
+    "departures": [
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:09:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Mårslet",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34587#TA#5#DA#280926#1S#860431601#1T#802#LS#860151502#LT#852#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431601#FT#802#TO#860151502#TT#852#",
+        "finalStop": "Mårslet (Letbane)",
+        "customerTour": "12242",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": {
+          "departureDateTime": "2026-09-28T08:09:00",
+          "rtDepartureDateTime": null,
+          "endStation": "860151502",
+          "customerTour": "12242",
+          "journeyId": "68534461-caba-416c-aefe-a88dcc3b6732",
+          "id": "2498",
+          "passengerCountInformation": null
+        },
+        "journeyNotStarted": false,
+        "uniqueHash": "0a1aa6b424134ec57b6eb9cb299e63b0",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:24:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Odder",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34580#TA#0#DA#280926#1S#860015202#1T#811#LS#860151902#LT#926#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860015202#FT#811#TO#860151902#TT#926#",
+        "finalStop": "Odder (Letbane)",
+        "customerTour": "12042",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "2eef2a28be5bfe83bcd7f027294e542c",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:39:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Mårslet",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34587#TA#6#DA#280926#1S#860431601#1T#832#LS#860151502#LT#922#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431601#FT#832#TO#860151502#TT#922#",
+        "finalStop": "Mårslet (Letbane)",
+        "customerTour": "12246",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "6f397826a77c1e1dbd4a9ddbde82553b",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-09-28T08:54:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Odder",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790348833#PI#0#ZI#34580#TA#1#DA#280926#1S#860015202#1T#841#LS#860151902#LT#956#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860015202#FT#841#TO#860151902#TT#956#",
+        "finalStop": "Odder (Letbane)",
+        "customerTour": "12046",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "e579a755d211d28a5443e0af31899ec9",
+        "trafficTypeCode": "070"
+      }
+    ]
+  },
+  "status": 200,
+  "errors": null
+}

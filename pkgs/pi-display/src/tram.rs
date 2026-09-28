@@ -65,26 +65,37 @@ pub fn upcoming(departures: &[Departure], now: Timestamp) -> Vec<&Departure> {
 
 pub struct Client {
     agent: ureq::Agent,
-    url: String,
+    urls: Vec<String>,
 }
 
 impl Client {
-    pub fn new(agent: ureq::Agent, stop: &str) -> Self {
+    pub fn new(agent: ureq::Agent, stops: &[String]) -> Self {
         Self {
             agent,
-            url: format!("https://apilivemidttrafik.adibuslive.com/api/stops/departures/{stop}"),
+            urls: stops
+                .iter()
+                .map(|s| {
+                    format!("https://apilivemidttrafik.adibuslive.com/api/stops/departures/{s}")
+                })
+                .collect(),
         }
     }
 
+    /// Departures from all stops, or an error if any stop fails: showing only
+    /// some platforms would silently hide trams.
     pub fn fetch(&self, tz: &TimeZone) -> Result<Vec<Departure>> {
-        let body = self
-            .agent
-            .get(&self.url)
-            .header("Accept", "application/json")
-            .call()?
-            .body_mut()
-            .read_to_string()?;
-        parse(&body, tz)
+        let mut all = Vec::new();
+        for url in &self.urls {
+            let body = self
+                .agent
+                .get(url)
+                .header("Accept", "application/json")
+                .call()?
+                .body_mut()
+                .read_to_string()?;
+            all.extend(parse(&body, tz)?);
+        }
+        Ok(all)
     }
 }
 
@@ -132,6 +143,26 @@ mod tests {
             "cancelled":false}]}}"#;
         let deps = parse(json, &tz()).unwrap();
         assert_eq!(deps[0].time.datetime().to_string(), "2026-09-28T08:03:00");
+    }
+
+    #[test]
+    fn platforms_interleave() {
+        let mut all = parse(include_str!("../tests/fixtures/platform-102.json"), &tz()).unwrap();
+        all.extend(parse(include_str!("../tests/fixtures/platform-103.json"), &tz()).unwrap());
+        let next: Vec<_> = upcoming(&all, at("2026-09-28T08:05:00"))
+            .iter()
+            .take(4)
+            .map(|d| format!("{} {}", d.time.strftime("%H:%M"), d.direction))
+            .collect();
+        assert_eq!(
+            next,
+            [
+                "08:09 Mårslet",
+                "08:16 Aarhus H",
+                "08:24 Odder",
+                "08:31 Aarhus H"
+            ]
+        );
     }
 
     #[test]

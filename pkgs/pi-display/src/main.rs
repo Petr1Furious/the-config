@@ -34,9 +34,9 @@ const REDRAW_INTERVAL: Duration = Duration::from_secs(10);
 /// Next trams and air quality on an SSD1306 OLED.
 #[derive(Parser)]
 struct Args {
-    /// Midttrafik stop id (a single platform).
-    #[arg(long, default_value = "860431102")]
-    stop: String,
+    /// Midttrafik stop id; repeat for several platforms.
+    #[arg(long = "stop", default_values = ["860431102", "860431103"])]
+    stops: Vec<String>,
     /// bme688-exporter metrics URL.
     #[arg(long, default_value = "http://100.67.147.81:9688/metrics")]
     metrics_url: String,
@@ -105,7 +105,7 @@ fn run(args: Args) -> Result<()> {
         .user_agent(USER_AGENT)
         .build()
         .into();
-    let trams = tram::Client::new(agent.clone(), &args.stop);
+    let trams = tram::Client::new(agent.clone(), &args.stops);
 
     let i2c = I2cdev::new(&args.bus).map_err(display_err)?;
     let interface = I2CDisplayInterface::new_custom_address(i2c, args.address);
@@ -116,10 +116,10 @@ fn run(args: Args) -> Result<()> {
         .set_brightness(Brightness::DIM)
         .map_err(display_err)?;
     eprintln!(
-        "display at {:#04x} on {}, stop {}, off {}",
+        "display at {:#04x} on {}, stops {}, off {}",
         args.address,
         args.bus.display(),
-        args.stop,
+        args.stops.join(" "),
         args.off_hours
     );
 
