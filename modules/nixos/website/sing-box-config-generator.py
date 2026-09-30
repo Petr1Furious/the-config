@@ -398,10 +398,10 @@ def rule_set_values(rule: dict) -> set[str]:
     return set()
 
 
-def set_rule_set_detour(config, detour: str):
+def clear_rule_set_detour(config):
     for client in config.get("http_clients", []):
         if isinstance(client, dict):
-            client["detour"] = detour
+            client.pop("detour", None)
 
 
 def configure_ru_only(config):
@@ -417,7 +417,7 @@ def configure_ru_only(config):
                 ):
                     rule["outbound"] = "proxy"
 
-    set_rule_set_detour(config, "direct")
+    clear_rule_set_detour(config)
 
     dns = config.get("dns")
     if not isinstance(dns, dict):
