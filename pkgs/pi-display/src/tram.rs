@@ -1,9 +1,14 @@
+use std::collections::HashSet;
+use std::time::{Duration, Instant};
+
 use jiff::civil::DateTime;
 use jiff::tz::TimeZone;
 use jiff::{Timestamp, Zoned};
 use serde::Deserialize;
 
-use crate::error::Result;
+use crate::error::{Error, Result};
+
+const OPPOSITE_REFRESH: Duration = Duration::from_secs(24 * 3600);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Departure {
@@ -63,39 +68,86 @@ pub fn upcoming(departures: &[Departure], now: Timestamp) -> Vec<&Departure> {
     upcoming
 }
 
+/// Destinations served by `departures`.
+pub fn directions(departures: &[Departure]) -> HashSet<String> {
+    departures.iter().map(|d| d.direction.clone()).collect()
+}
+
+/// Drops departures heading to any of `away`.
+pub fn without(departures: Vec<Departure>, away: &HashSet<String>) -> Vec<Departure> {
+    departures
+        .into_iter()
+        .filter(|d| !away.contains(&d.direction))
+        .collect()
+}
+
+fn url(stop: &str) -> String {
+    format!("https://apilivemidttrafik.adibuslive.com/api/stops/departures/{stop}")
+}
+
 pub struct Client {
     agent: ureq::Agent,
-    urls: Vec<String>,
+    stops: Vec<String>,
+    opposite: String,
+    /// Destinations of the opposite direction, learned from `opposite`.
+    away: Option<(HashSet<String>, Instant)>,
 }
 
 impl Client {
-    pub fn new(agent: ureq::Agent, stops: &[String]) -> Self {
+    pub fn new(agent: ureq::Agent, stops: &[String], opposite: &str) -> Self {
         Self {
             agent,
-            urls: stops
-                .iter()
-                .map(|s| {
-                    format!("https://apilivemidttrafik.adibuslive.com/api/stops/departures/{s}")
-                })
-                .collect(),
+            stops: stops.to_vec(),
+            opposite: opposite.to_owned(),
+            away: None,
         }
     }
 
-    /// Departures from all stops, or an error if any stop fails: showing only
-    /// some platforms would silently hide trams.
-    pub fn fetch(&self, tz: &TimeZone) -> Result<Vec<Departure>> {
-        let mut all = Vec::new();
-        for url in &self.urls {
-            let body = self
-                .agent
-                .get(url)
-                .header("Accept", "application/json")
-                .call()?
-                .body_mut()
-                .read_to_string()?;
-            all.extend(parse(&body, tz)?);
+    fn get(&self, stop: &str, tz: &TimeZone) -> Result<Vec<Departure>> {
+        let body = self
+            .agent
+            .get(url(stop))
+            .header("Accept", "application/json")
+            .call()?
+            .body_mut()
+            .read_to_string()?;
+        parse(&body, tz)
+    }
+
+    /// Learns the opposite direction's destinations on first use and once a
+    /// day after that; a failed refresh keeps the previous set.
+    fn refresh_away(&mut self, tz: &TimeZone) -> Result<&HashSet<String>> {
+        if self
+            .away
+            .as_ref()
+            .is_none_or(|(_, at)| at.elapsed() >= OPPOSITE_REFRESH)
+        {
+            let learned = self.get(&self.opposite, tz).and_then(|deps| {
+                let away = directions(&deps);
+                if away.is_empty() {
+                    Err(Error::NoOppositeDepartures(self.opposite.clone()))
+                } else {
+                    Ok(away)
+                }
+            });
+            match (learned, &mut self.away) {
+                (Ok(away), slot) => *slot = Some((away, Instant::now())),
+                (Err(_), Some((_, at))) => *at = Instant::now(),
+                (Err(e), None) => return Err(e),
+            }
         }
-        Ok(all)
+        Ok(&self.away.as_ref().expect("set above").0)
+    }
+
+    /// Departures from all stops towards the configured direction, or an error
+    /// if any stop fails: showing only some platforms would silently hide trams.
+    pub fn fetch(&mut self, tz: &TimeZone) -> Result<Vec<Departure>> {
+        let away = self.refresh_away(tz)?.clone();
+        let mut all = Vec::new();
+        for stop in &self.stops {
+            all.extend(self.get(stop, tz)?);
+        }
+        Ok(without(all, &away))
     }
 }
 
@@ -163,6 +215,22 @@ mod tests {
                 "08:31 Aarhus H"
             ]
         );
+    }
+
+    #[test]
+    fn opposite_direction_is_hidden() {
+        let away =
+            directions(&parse(include_str!("../tests/fixtures/platform-101.json"), &tz()).unwrap());
+        let mixed = parse(
+            include_str!("../tests/fixtures/platform-103-night.json"),
+            &tz(),
+        )
+        .unwrap();
+        let kept: Vec<_> = without(mixed, &away)
+            .iter()
+            .map(|d| format!("{} {}", d.time.strftime("%H:%M"), d.direction))
+            .collect();
+        assert_eq!(kept, ["23:54 Aarhus H", "00:09 Aarhus H", "00:24 Odder"]);
     }
 
     #[test]

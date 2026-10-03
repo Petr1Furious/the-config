@@ -1,0 +1,100 @@
+{
+  "data": {
+    "departures": [
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T05:20:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lystrup",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33473#TA#0#DA#31026#1S#860005301#1T#501#LS#860015202#LT#533#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#501#TO#860015202#TT#533#",
+        "finalStop": "Lystrup (Letbane)",
+        "customerTour": "13017",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "d9da8d35766588bece23f1781134c569",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T05:35:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lisbjergskolen",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33505#TA#0#DA#31026#1S#860005301#1T#516#LS#860431601#LT#543#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#516#TO#860431601#TT#543#",
+        "finalStop": "Lisbjergskolen (Letbane)",
+        "customerTour": "13219",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "9c6e60e548d2029d052d09e071d4347e",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T05:50:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lystrup",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33473#TA#1#DA#31026#1S#860005301#1T#531#LS#860015202#LT#603#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#531#TO#860015202#TT#603#",
+        "finalStop": "Lystrup (Letbane)",
+        "customerTour": "13021",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "0e50ce3087a0c208d089c0a403a41196",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T06:05:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lisbjergskolen",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33505#TA#1#DA#31026#1S#860005301#1T#546#LS#860431601#LT#613#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#546#TO#860431601#TT#613#",
+        "finalStop": "Lisbjergskolen (Letbane)",
+        "customerTour": "13223",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "b597bfa719a37ebc7898d2d8b889f394",
+        "trafficTypeCode": "070"
+      }
+    ]
+  },
+  "status": 200,
+  "errors": null
+}

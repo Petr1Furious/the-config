@@ -1,0 +1,170 @@
+{
+  "data": {
+    "departures": [
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-02T23:50:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lystrup",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33497#TA#9#DA#21026#1S#860005301#1T#2331#LS#860015202#LT#10003#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#2331#TO#860015202#TT#10003#",
+        "finalStop": "Lystrup (Letbane)",
+        "customerTour": "13165",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": {
+          "departureDateTime": "2026-10-02T23:50:00",
+          "rtDepartureDateTime": null,
+          "endStation": "860015202",
+          "customerTour": "13165",
+          "journeyId": "53aecfe0-4ba4-4f24-9f23-e9080d49f4fa",
+          "id": "2500",
+          "passengerCountInformation": null
+        },
+        "journeyNotStarted": false,
+        "uniqueHash": "c8d18ae8637e6f5ddbea0c02314fa035",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-02T23:54:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33552#TA#0#DA#21026#1S#860015202#1T#2341#LS#860005300#LT#10013#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860015202#FT#2341#TO#860005300#TT#10013#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13166",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": {
+          "departureDateTime": "2026-10-02T23:54:00",
+          "rtDepartureDateTime": null,
+          "endStation": "860005300",
+          "customerTour": "13166",
+          "journeyId": "e87c93bb-de97-4e53-bb16-98c0ad5c1412",
+          "id": "2266",
+          "passengerCountInformation": null
+        },
+        "journeyNotStarted": false,
+        "uniqueHash": "53beb90d25a26a5309da058a5cb67c01",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T00:05:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lisbjergskolen",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33503#TA#1#DA#21026#1S#860151902#1T#2304#LS#860431601#LT#10013#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860151902#FT#2304#TO#860431601#TT#10013#",
+        "finalStop": "Lisbjergskolen (Letbane)",
+        "customerTour": "12361",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": {
+          "departureDateTime": "2026-10-03T00:05:00",
+          "rtDepartureDateTime": null,
+          "endStation": "860431601",
+          "customerTour": "12361",
+          "journeyId": "c424e461-891f-4509-898f-215c379a6b83",
+          "id": "2494",
+          "passengerCountInformation": null
+        },
+        "journeyNotStarted": false,
+        "uniqueHash": "833057c55ad80ad1b5ad2bc2cea73461",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T00:09:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Aarhus H",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33551#TA#0#DA#21026#1S#860431601#1T#10002#LS#860005300#LT#10028#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860431601#FT#10002#TO#860005300#TT#10028#",
+        "finalStop": "Aarhus H (Letbane)",
+        "customerTour": "13370",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "5a5f5db2ec73c0f90ae0147f15179798",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T00:20:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Lystrup",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33497#TA#10#DA#21026#1S#860005301#1T#10001#LS#860015202#LT#10033#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860005301#FT#10001#TO#860015202#TT#10033#",
+        "finalStop": "Lystrup (Letbane)",
+        "customerTour": "13169",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "287426bf07f6095ba3a285103b04be1f",
+        "trafficTypeCode": "070"
+      },
+      {
+        "name": "L2",
+        "stop": "Aarhus Universitetshospital (Letbane)",
+        "dateTime": "2026-10-03T00:24:00",
+        "rtDateTime": null,
+        "realRtDateTime": null,
+        "messages": "1",
+        "direction": "Odder",
+        "journeyChangeType": -1,
+        "cancelled": false,
+        "ref": "2|#VN#1#ST#1790943337#PI#0#ZI#33550#TA#1#DA#21026#1S#860015202#1T#10011#LS#860151902#LT#10126#PU#86#RT#1#CA#070#ZE#L2#ZB#Letbane L2#PC#11#FR#860015202#FT#10011#TO#860151902#TT#10126#",
+        "finalStop": "Odder (Letbane)",
+        "customerTour": "12170",
+        "colors": {
+          "colorForeground": "#30556E",
+          "colorBackground": "#30556E",
+          "colorText": "#FFF"
+        },
+        "activeBus": null,
+        "journeyNotStarted": false,
+        "uniqueHash": "85afc3c34287c0acc5fcf9fabbbc38dd",
+        "trafficTypeCode": "070"
+      }
+    ]
+  },
+  "status": 200,
+  "errors": null
+}

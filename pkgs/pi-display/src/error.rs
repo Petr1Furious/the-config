@@ -12,6 +12,8 @@ pub enum Error {
     Display(String),
     #[error("invalid --off-hours {0:?}, expected HH:MM-HH:MM")]
     OffHours(String),
+    #[error("opposite stop {0} lists no departures to learn directions from")]
+    NoOppositeDepartures(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
