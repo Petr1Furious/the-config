@@ -11,6 +11,7 @@
     pkgs-unstable.claude-code
     pkgs-unstable.codex
     gcc
+    gh
     pciutils
     rclone
     restic

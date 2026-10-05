@@ -38,12 +38,11 @@ if ! id -nG "$USER" | grep -qw i2c; then
   log "added $USER to i2c; log in again for it to apply"
 fi
 
-log "activity LED off"
-config=/boot/firmware/config.txt
-# No act_led_activelow: the Pi 5's LED polarity differs from older boards,
-# and the trigger alone keeps it off.
-if ! grep -qx "dtparam=act_led_trigger=none" "$config"; then
-  printf '\n[all]\ndtparam=act_led_trigger=none\n' | sudo tee -a "$config" >/dev/null
+log "status LED off (from the next boot)"
+# The Pi 5 LED is inverted: without activelow=off, trigger=none leaves it lit.
+if ! grep -qx 'dtparam=act_led_activelow=off' /boot/firmware/config.txt; then
+  printf '[all]\ndtparam=act_led_trigger=none\ndtparam=act_led_activelow=off\n' |
+    sudo tee -a /boot/firmware/config.txt >/dev/null
 fi
 
 log "cloud-init off"
