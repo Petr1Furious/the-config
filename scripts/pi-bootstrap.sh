@@ -38,6 +38,15 @@ if ! id -nG "$USER" | grep -qw i2c; then
   log "added $USER to i2c; log in again for it to apply"
 fi
 
+log "UART on GPIO14/15 for the LD2410 (from the next boot)"
+if ! grep -qx 'dtparam=uart0=on' /boot/firmware/config.txt; then
+  printf '[all]\ndtparam=uart0=on\n' | sudo tee -a /boot/firmware/config.txt >/dev/null
+fi
+if ! id -nG "$USER" | grep -qw dialout; then
+  sudo usermod -aG dialout "$USER"
+  log "added $USER to dialout; log in again for it to apply"
+fi
+
 log "status LED off (from the next boot)"
 # The Pi 5 LED is inverted: without activelow=off, trigger=none leaves it lit.
 if ! grep -qx 'dtparam=act_led_activelow=off' /boot/firmware/config.txt; then

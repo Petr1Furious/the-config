@@ -140,6 +140,7 @@
         in
         {
           bme688-exporter = pkgs.callPackage ./pkgs/bme688-exporter { };
+          ld2410-stream = pkgs.callPackage ./pkgs/ld2410-stream { };
           pi-display = pkgs.callPackage ./pkgs/pi-display { };
         };
 

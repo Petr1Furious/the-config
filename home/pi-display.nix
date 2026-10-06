@@ -7,7 +7,10 @@ in
   systemd.user.services.pi-display = {
     Unit = {
       Description = "OLED with next trams and air quality";
-      After = [ "bme688-exporter.service" ];
+      After = [
+        "bme688-exporter.service"
+        "ld2410-stream.service"
+      ];
     };
     Service = {
       ExecStart = lib.getExe display;

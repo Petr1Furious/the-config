@@ -1,20 +1,20 @@
 mod air;
 mod error;
 mod icons;
+mod radar;
 mod screen;
 mod tram;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use clap::Parser;
 use embedded_graphics::prelude::Point;
 use jiff::Zoned;
-use jiff::civil::Time;
 use jiff::tz::TimeZone;
 use linux_embedded_hal::I2cdev;
 use ssd1306::prelude::*;
@@ -30,6 +30,7 @@ const TRAM_INTERVAL: Duration = Duration::from_secs(60);
 const TRAM_MAX_BACKOFF: Duration = Duration::from_secs(600);
 const TRAMS_MAX_AGE: Duration = Duration::from_secs(300);
 const REDRAW_INTERVAL: Duration = Duration::from_secs(10);
+const TICK: Duration = Duration::from_millis(100);
 
 /// Next trams and air quality on an SSD1306 OLED.
 #[derive(Parser)]
@@ -43,9 +44,15 @@ struct Args {
     /// bme688-exporter metrics URL.
     #[arg(long, default_value = "http://100.67.147.81:9688/metrics")]
     metrics_url: String,
-    /// Local time range with the display off, HH:MM-HH:MM.
-    #[arg(long, default_value = "01:00-07:00")]
-    off_hours: String,
+    /// ld2410-stream address; the display is lit only while somebody is near.
+    #[arg(long, default_value = "100.67.147.81:2410")]
+    radar: String,
+    /// Furthest distance that counts as near, in cm.
+    #[arg(long, default_value_t = 100)]
+    near_cm: u16,
+    /// Seconds the display stays lit after the last near reading.
+    #[arg(long, default_value_t = 30)]
+    hold_secs: u64,
     /// I2C bus device.
     #[arg(long, default_value = "/dev/i2c-1")]
     bus: PathBuf,
@@ -56,21 +63,6 @@ struct Args {
 
 fn parse_address(s: &str) -> std::result::Result<u8, String> {
     u8::from_str_radix(s.trim_start_matches("0x"), 16).map_err(|e| e.to_string())
-}
-
-fn parse_off_hours(s: &str) -> Result<(Time, Time)> {
-    let err = || Error::OffHours(s.into());
-    let (start, end) = s.split_once('-').ok_or_else(err)?;
-    let time = |t: &str| format!("{t}:00").parse::<Time>().map_err(|_| err());
-    Ok((time(start)?, time(end)?))
-}
-
-fn is_off(now: Time, (start, end): (Time, Time)) -> bool {
-    if start <= end {
-        start <= now && now < end
-    } else {
-        now >= start || now < end
-    }
 }
 
 /// Moves the picture by up to 2 px every 5 minutes against burn-in.
@@ -101,7 +93,11 @@ fn run(args: Args) -> Result<()> {
         signal_hook::flag::register(sig, Arc::clone(&stop))?;
     }
 
-    let off_hours = parse_off_hours(&args.off_hours)?;
+    let presence = Arc::new(Mutex::new(radar::Presence::new(
+        args.near_cm,
+        Duration::from_secs(args.hold_secs),
+    )));
+    radar::spawn(args.radar.clone(), Arc::clone(&presence));
     let tz = TimeZone::get("Europe/Copenhagen")?;
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(10)))
@@ -119,12 +115,13 @@ fn run(args: Args) -> Result<()> {
         .set_brightness(Brightness::DIM)
         .map_err(display_err)?;
     eprintln!(
-        "display at {:#04x} on {}, stops {} (not towards {}), off {}",
+        "display at {:#04x} on {}, stops {} (not towards {}), lit within {} cm per {}",
         args.address,
         args.bus.display(),
         args.stops.join(" "),
         args.opposite_stop,
-        args.off_hours
+        args.near_cm,
+        args.radar
     );
 
     let mut departures: Option<(Vec<tram::Departure>, Instant)> = None;
@@ -136,21 +133,32 @@ fn run(args: Args) -> Result<()> {
     let mut air_error = None;
     let mut trend = Trend::default();
     let mut last_draw: Option<Instant> = None;
+    let mut radar_error = None;
     let mut on = true;
 
     while !stop.load(Ordering::Relaxed) {
         let now = Zoned::now().with_time_zone(tz.clone());
-        if is_off(now.time(), off_hours) {
-            if on {
-                display.set_display_on(false).map_err(display_err)?;
-                on = false;
-            }
-            thread::sleep(Duration::from_secs(1));
-            continue;
-        }
-        if !on {
-            display.set_display_on(true).map_err(display_err)?;
-            on = true;
+        let (near, blind) = {
+            let presence = presence.lock().unwrap();
+            (
+                presence.near(Instant::now()),
+                presence.blind(Instant::now()),
+            )
+        };
+        report(
+            "radar",
+            &mut radar_error,
+            if blind {
+                Err(format!("no readings from {}", args.radar))
+            } else {
+                Ok(())
+            },
+        );
+        // Without the radar the display stays lit rather than dark for good.
+        let lit = near || blind;
+        if lit != on {
+            display.set_display_on(lit).map_err(display_err)?;
+            on = lit;
             last_draw = None;
         }
 
@@ -189,7 +197,7 @@ fn run(args: Args) -> Result<()> {
             );
         }
 
-        if changed || last_draw.is_none_or(|t| t.elapsed() >= REDRAW_INTERVAL) {
+        if on && (changed || last_draw.is_none_or(|t| t.elapsed() >= REDRAW_INTERVAL)) {
             let fresh_air = air.as_ref().filter(|(_, at)| at.elapsed() < AIR_MAX_AGE);
             let inputs = screen::Inputs {
                 departures: departures.as_ref().map(|(d, _)| d.as_slice()),
@@ -205,7 +213,7 @@ fn run(args: Args) -> Result<()> {
             display.flush().map_err(display_err)?;
             last_draw = Some(Instant::now());
         }
-        thread::sleep(Duration::from_secs(1));
+        thread::sleep(TICK);
     }
 
     display.clear_buffer();
@@ -221,34 +229,5 @@ fn main() -> ExitCode {
             eprintln!("error: {e}");
             ExitCode::FAILURE
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn t(s: &str) -> Time {
-        format!("{s}:00").parse().unwrap()
-    }
-
-    #[test]
-    fn off_hours_within_a_day_and_across_midnight() {
-        let night = parse_off_hours("00:00-07:00").unwrap();
-        assert!(is_off(t("00:00"), night));
-        assert!(is_off(t("06:59"), night));
-        assert!(!is_off(t("07:00"), night));
-        assert!(!is_off(t("23:59"), night));
-
-        let wrap = parse_off_hours("23:30-06:00").unwrap();
-        assert!(is_off(t("23:45"), wrap));
-        assert!(is_off(t("05:00"), wrap));
-        assert!(!is_off(t("12:00"), wrap));
-    }
-
-    #[test]
-    fn off_hours_rejects_garbage() {
-        assert!(parse_off_hours("7-9").is_err());
-        assert!(parse_off_hours("07:00").is_err());
     }
 }

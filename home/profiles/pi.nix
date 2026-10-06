@@ -4,6 +4,7 @@
   imports = [
     ../bme688-exporter.nix
     ../core.nix
+    ../ld2410-stream.nix
     ../linux.nix
     ../pi-display.nix
   ];

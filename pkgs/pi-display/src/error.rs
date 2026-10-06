@@ -10,8 +10,6 @@ pub enum Error {
     Time(#[from] jiff::Error),
     #[error("display: {0}")]
     Display(String),
-    #[error("invalid --off-hours {0:?}, expected HH:MM-HH:MM")]
-    OffHours(String),
     #[error("opposite stop {0} lists no departures to learn directions from")]
     NoOppositeDepartures(String),
 }
