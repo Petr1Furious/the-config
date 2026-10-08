@@ -33,6 +33,9 @@ log "I2C"
 if [ "$(sudo raspi-config nonint get_i2c)" != 0 ]; then
   sudo raspi-config nonint do_i2c 0
 fi
+if ! grep -qx 'dtparam=i2c_arm_baudrate=400000' /boot/firmware/config.txt; then
+  printf '[all]\ndtparam=i2c_arm_baudrate=400000\n' | sudo tee -a /boot/firmware/config.txt >/dev/null
+fi
 if ! id -nG "$USER" | grep -qw i2c; then
   sudo usermod -aG i2c "$USER"
   log "added $USER to i2c; log in again for it to apply"
