@@ -29,6 +29,7 @@
     ../../modules/nixos/nixarr.nix
     ../../modules/nixos/nextcloud.nix
     ../../modules/nixos/vaultwarden.nix
+    ../../modules/nixos/gsim.nix
     ../../modules/nixos/caddy.nix
   ];
 
