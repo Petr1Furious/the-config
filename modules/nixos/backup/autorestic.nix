@@ -291,6 +291,10 @@ in
       globalAll = cfg.global.options.all;
       globalBackup = cfg.global.options.backup;
 
+      locTo = l: if (l.to != [ ]) then l.to else cfg.defaultTo;
+
+      usedBackends = lib.unique (lib.concatMap locTo (lib.attrValues cfg.locations));
+
       autoresticYaml = {
         version = 2;
 
@@ -300,7 +304,9 @@ in
           // lib.optionalAttrs (globalAll != { }) { all = globalAll; }
           // lib.optionalAttrs (globalBackup != { }) { backup = globalBackup; };
 
-        backends = mapAttrs (_: b: { inherit (b) type path; }) cfg.backends;
+        backends = mapAttrs (_: b: { inherit (b) type path; }) (
+          lib.filterAttrs (n: _: lib.elem n usedBackends) cfg.backends
+        );
 
         locations = mapAttrs (
           _: l:
@@ -311,11 +317,10 @@ in
               // lib.optionalAttrs (l.options.all != { }) { all = l.options.all; }
               // lib.optionalAttrs (l.options.backup != { }) { backup = l.options.backup; }
               // lib.optionalAttrs (locForget != { }) { forget = locForget; };
-            locTo = if (l.to != [ ]) then l.to else cfg.defaultTo;
           in
           {
             inherit (l) from cron;
-            to = locTo;
+            to = locTo l;
             hooks = l.hooks;
             forget = l.forget;
             options = lib.optionalAttrs (locOptions != { }) locOptions;

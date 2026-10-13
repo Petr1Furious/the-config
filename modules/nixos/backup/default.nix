@@ -16,7 +16,6 @@
   backup.passwordFilePath = config.age.secrets.restic-key.path;
 
   backup.defaultTo = [
-    "yandex"
     "backblaze-b2"
   ];
 
