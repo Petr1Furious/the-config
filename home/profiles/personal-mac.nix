@@ -11,6 +11,7 @@
     pkgs-unstable.claude-code
     pkgs-unstable.codex
     mitmproxy
+    mpv
     rclone
     restic
     zstd
