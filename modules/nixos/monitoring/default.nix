@@ -18,6 +18,7 @@ let
   telegramChatId = 702629742;
 
   nginxUrl = "http://127.0.0.1:${toString config.setup.nginxPort}";
+  vpnNamespaceAddress = config.vpnNamespaces.wg.namespaceAddress;
 
   httpProbeTargets = [
     {
@@ -50,7 +51,7 @@ let
     }
     {
       service = "qbittorrent";
-      url = "http://127.0.0.1:${toString config.nixarr.qbittorrent.qui.internalPort}/api/v2/app/version";
+      url = "http://${vpnNamespaceAddress}:${toString config.nixarr.qbittorrent.qui.internalPort}/api/v2/app/version";
     }
     {
       service = "qui";

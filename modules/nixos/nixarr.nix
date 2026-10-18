@@ -1,23 +1,32 @@
 {
   config,
+  lib,
   inputs,
+  secrets,
   ...
 }:
 
 let
-  qbitPeerPort = 51413;
-  singBoxSocksPort = 10808;
+  # Must match the port forwarded to this device in the AirVPN client area.
+  qbitPeerPort = 16513;
   qbitWebuiPort = 5252;
   qbitInternalPort = config.nixarr.qbittorrent.qui.internalPort;
 
   seerrPort = config.nixarr.seerr.port;
   bazarrPort = config.nixarr.bazarr.port;
   prowlarrPort = config.nixarr.prowlarr.port;
+
+  vpnNamespace = config.vpnNamespaces.wg;
 in
 {
   imports = [ inputs.nixarr.nixosModules.default ];
 
   services.flaresolverr.enable = true;
+  # The nixpkgs module denies @setuid, which Chromium's sandbox needs.
+  # FlareSolverr still starts, but every Cloudflare challenge times out.
+  systemd.services.flaresolverr.serviceConfig.SystemCallFilter = lib.mkAfter [ "@setuid" ];
+
+  age.secrets.airvpn-wg.file = secrets + "/airvpn-wg.age";
 
   nixarr = {
     enable = true;
@@ -25,9 +34,20 @@ in
     mediaDir = "/srv/media";
     stateDir = "/srv/media/.state/nixarr";
 
+    vpn = {
+      enable = true;
+      wgConf = config.age.secrets.airvpn-wg.path;
+      # The default routes 10.0.0.0/8 back to the host, which swallows
+      # AirVPN's in-tunnel DNS at 10.128.0.1.
+      exposeOnLAN = false;
+    };
+
     jellyfin.enable = true;
     radarr.enable = true;
     sonarr.enable = true;
+    # Not VPN-confined: from AirVPN exits Cloudflare rejects Prowlarr's own
+    # requests even with a fresh FlareSolverr clearance. Indexers that need
+    # AirVPN instead get the "airvpn" tag and go through proxy.nix's SOCKS port.
     prowlarr.enable = true;
     bazarr.enable = true;
     seerr.enable = true;
@@ -41,7 +61,7 @@ in
         implementation = "QBittorrent";
         enable = true;
         fields = {
-          host = "localhost";
+          host = vpnNamespace.namespaceAddress;
           port = qbitInternalPort;
           useSsl = false;
           tvCategory = "sonarr";
@@ -55,7 +75,7 @@ in
         implementation = "QBittorrent";
         enable = true;
         fields = {
-          host = "localhost";
+          host = vpnNamespace.namespaceAddress;
           port = qbitInternalPort;
           useSsl = false;
           movieCategory = "radarr";
@@ -72,6 +92,7 @@ in
 
     qbittorrent = {
       enable = true;
+      vpn.enable = true;
       peerPort = qbitPeerPort;
       webuiPort = qbitWebuiPort;
       exporter.listenAddr = "127.0.0.1";
@@ -82,27 +103,10 @@ in
           "Session\\GlobalMaxInactiveSeedingMinutes" = 1440;
           "Session\\ShareLimitAction" = "RemoveWithContent";
 
-          "Session\\ProxyPeerConnections" = true;
           "Session\\AnonymousModeEnabled" = true;
           "Session\\DHTEnabled" = false;
           "Session\\LSDEnabled" = false;
           "Session\\PeXEnabled" = true;
-        };
-
-        # Without a [Meta] section qBittorrent treats the generated file as
-        # pre-migration and reruns migrateProxySettings on every start, which
-        # resets Proxy\HostnameLookupEnabled to false.
-        Meta."MigrationVersion" = 8;
-
-        Network = {
-          "Proxy\\Type" = "SOCKS5";
-          "Proxy\\IP" = "127.0.0.1";
-          "Proxy\\Port" = singBoxSocksPort;
-          "Proxy\\AuthEnabled" = false;
-          "Proxy\\HostnameLookupEnabled" = true;
-          "Proxy\\Profiles\\BitTorrent" = true;
-          "Proxy\\Profiles\\RSS" = true;
-          "Proxy\\Profiles\\Misc" = true;
         };
       };
     };
@@ -170,15 +174,7 @@ in
     prowlarr.exporter.listenAddr = "127.0.0.1";
   };
 
-  systemd.services.prowlarr = {
-    after = [ "sing-box.service" ];
-    wants = [ "sing-box.service" ];
-  };
-
   systemd.services.qbittorrent = {
-    after = [ "sing-box.service" ];
-    wants = [ "sing-box.service" ];
-
     # nixarr sets this for transmission but not qbittorrent, which then leaves
     # finished files group-read-only. fs.protected_hardlinks then denies
     # Sonarr/Radarr the link(), and they silently copy instead.

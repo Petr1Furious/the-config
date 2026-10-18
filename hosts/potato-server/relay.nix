@@ -24,7 +24,9 @@ let
   mgmtSshPort = 2222; # Selectel's own sshd — leave reachable directly
 in
 {
-  networking.wireguard.interfaces.wg0 = {
+  # Not wg0: nixarr's VPN namespace is hardcoded to "wg" and VPN-Confinement
+  # creates its tunnel as wg0 in the host namespace before moving it.
+  networking.wireguard.interfaces.wg-relay = {
     ips = [ "${wgSelf}/30" ];
     mtu = 1420;
     privateKeyFile = "/var/lib/wireguard/wg0.key";
@@ -53,7 +55,7 @@ in
     # the tunnel) and the relay's own management SSH port.
     postSetup = ''
       ${pkgs.iproute2}/bin/ip rule add from ${wgSelf} table ${toString tunTable} priority 100 || true
-      ${pkgs.iproute2}/bin/ip route replace default dev wg0 table ${toString tunTable}
+      ${pkgs.iproute2}/bin/ip route replace default dev wg-relay table ${toString tunTable}
       ${pkgs.iptables}/bin/iptables -t nat -C OUTPUT -d ${relayHost} -p tcp -m tcp ! --dport ${toString mgmtSshPort} -j DNAT --to-destination ${wgSelf} 2>/dev/null \
         || ${pkgs.iptables}/bin/iptables -t nat -A OUTPUT -d ${relayHost} -p tcp -m tcp ! --dport ${toString mgmtSshPort} -j DNAT --to-destination ${wgSelf}
       ${pkgs.iptables}/bin/iptables -t nat -C OUTPUT -d ${relayHost} -p udp -m udp ! --dport ${toString wgPort} -j DNAT --to-destination ${wgSelf} 2>/dev/null \
@@ -67,7 +69,8 @@ in
     '';
   };
 
-  # Relayed packets arrive on wg0 with public client source IPs whose route is
-  # via eth0, not wg0 — strict reverse-path filtering would drop them.
+  # Relayed packets arrive on wg-relay with public client source IPs whose
+  # route is via eth0, not wg-relay — strict reverse-path filtering would drop
+  # them.
   networking.firewall.checkReversePath = "loose";
 }
