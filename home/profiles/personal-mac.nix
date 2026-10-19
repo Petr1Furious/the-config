@@ -1,4 +1,9 @@
-{ pkgs, pkgs-unstable, ... }:
+{
+  inputs,
+  pkgs,
+  pkgs-unstable,
+  ...
+}:
 
 {
   imports = [
@@ -19,6 +24,9 @@
       exec ${gnutar}/bin/tar "$@"
     '')
   ];
+
+  # TODO: restore unstable atuin once it builds again
+  programs.atuin.package = inputs.nixpkgs-atuin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.atuin;
 
   programs.git.settings.user = {
     name = "Petr Tsopa";

@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    # TODO: drop once atuin builds on nixos-unstable again
+    nixpkgs-atuin.url = "github:nixos/nixpkgs/e7439b6b14ad3cc35d05608ebca9bce01a25f5f8";
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
