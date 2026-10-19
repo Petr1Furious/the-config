@@ -30,6 +30,7 @@
     ../../modules/nixos/nextcloud.nix
     ../../modules/nixos/vaultwarden.nix
     ../../modules/nixos/gsim.nix
+    ../../modules/nixos/atuin.nix
     ../../modules/nixos/caddy.nix
   ];
 

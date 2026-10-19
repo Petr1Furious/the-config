@@ -16,6 +16,7 @@ in
     settings = {
       enter_accept = false;
       search_mode = "fulltext";
+      sync_address = "https://atuin.petr1furious.me";
     };
   };
 

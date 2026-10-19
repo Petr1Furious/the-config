@@ -62,6 +62,10 @@ let
       url = "http://127.0.0.1:8222/alive";
     }
     {
+      service = "atuin";
+      url = "http://127.0.0.1:${toString config.services.atuin.port}/healthz";
+    }
+    {
       service = "immich";
       url = "http://localhost:${toString config.services.immich.port}/api/server/ping";
     }
