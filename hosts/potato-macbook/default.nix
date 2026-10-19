@@ -21,6 +21,7 @@
       "iina"
       "kde-connect"
       "orbstack"
+      "stats"
       "tailscale-app"
       "linearmouse"
       "sfm"
