@@ -104,7 +104,7 @@ in
           "Session\\ShareLimitAction" = "RemoveWithContent";
 
           "Session\\AnonymousModeEnabled" = true;
-          "Session\\DHTEnabled" = false;
+          "Session\\DHTEnabled" = true;
           "Session\\LSDEnabled" = false;
           "Session\\PeXEnabled" = true;
         };
