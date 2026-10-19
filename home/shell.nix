@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -12,11 +13,16 @@ in
 {
   programs.atuin = {
     enable = true;
+    # All clients must share a version: newer ones write history records older
+    # ones fail to decode. TODO: switch to pkgs-unstable once atuin builds there.
+    package = inputs.nixpkgs-atuin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.atuin;
     flags = [ "--disable-up-arrow" ];
+    daemon.enable = true;
     settings = {
       enter_accept = false;
       search_mode = "fulltext";
       sync_address = "https://atuin.petr1furious.me";
+      ai.enabled = true;
     };
   };
 
