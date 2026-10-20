@@ -31,8 +31,7 @@
           name = entry.host;
           value.extraConfig = ''
             ${lib.optionalString entry.tailscaleOnly ''
-              # No public DNS record for this host, so HTTP-01 can't reach it; prove
-              # ownership via a DNS-01 TXT record instead.
+              # Public DNS points this host at its tailnet address, use DNS-01
               tls {
                 dns cloudflare {env.CF_API_TOKEN}
               }

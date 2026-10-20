@@ -4,11 +4,7 @@
 }:
 
 let
-  tailnetAddress = "100.75.46.26";
   webPort = 8081;
-  tailnetHosts = map (proxy: proxy.host) (
-    builtins.filter (proxy: proxy.tailscaleOnly) config.caddy.proxies
-  );
 in
 {
   services.pihole-ftl = {
@@ -30,17 +26,8 @@ in
         "9.9.9.9"
         "149.112.112.112"
       ];
-
-      # Only override the tailscale-only proxies (grafana/radarr/sonarr/vaultwarden).
-      # Remapping everything, including throughput-sensitive stuff like jellyfin,
-      # would significantly decrease performance (userspace wg is notably slow on macos).
-      hosts = map (host: "${tailnetAddress} ${host}") tailnetHosts;
     };
   };
-
-  # The host resolves through OVH, not Pi-hole, so it needs the same overrides
-  # to reach its own tailnet-only vhosts.
-  networking.hosts.${tailnetAddress} = tailnetHosts;
 
   services.pihole-web = {
     enable = true;
