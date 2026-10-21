@@ -20,15 +20,94 @@ let
     exec ${lib.getExe pkgs-unstable.rust-analyzer} "$@"
   '';
 
-  statusLine = pkgs.writeShellApplication {
-    name = "claude-statusline";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.git
-      pkgs.jq
-    ];
-    text = builtins.readFile ./claude/statusline.sh;
-  };
+  powerlineSegments = [
+    {
+      model.enabled = true;
+    }
+    {
+      thinking = {
+        enabled = true;
+        showEnabled = false;
+      };
+    }
+    {
+      context = {
+        enabled = true;
+        percentageMode = "used";
+      };
+    }
+    {
+      block = {
+        enabled = true;
+        showPace = true;
+      };
+    }
+    {
+      weekly = {
+        enabled = true;
+        showPace = true;
+      };
+    }
+    {
+      session = {
+        enabled = true;
+        type = "cost";
+        costSource = "official";
+      };
+    }
+    {
+      today = {
+        enabled = true;
+        type = "cost";
+      };
+    }
+    {
+      cacheTimer = {
+        enabled = true;
+        displayMode = "remaining";
+      };
+    }
+    {
+      directory = {
+        enabled = true;
+        style = "fish";
+      };
+    }
+    {
+      git = {
+        enabled = true;
+        showSha = false;
+        showWorkingTree = true;
+      };
+    }
+    {
+      metrics = {
+        enabled = true;
+        showResponseTime = false;
+        showDuration = false;
+        showMessageCount = false;
+      };
+    }
+  ];
+
+  powerlineConfig = pkgs.writeText "claude-powerline.json" ''
+    {
+      "theme": "dark",
+      "display": {
+        "style": "powerline",
+        "charset": "unicode",
+        "lines": [{"segments": {${
+          lib.concatMapStringsSep ", " (
+            s:
+            lib.concatStringsSep ", " (
+              lib.mapAttrsToList (n: v: "${builtins.toJSON n}: ${builtins.toJSON v}") s
+            )
+          ) powerlineSegments
+        }}}]
+      },
+      "budget": {"today": {"amount": 0}}
+    }
+  '';
 
   settingsFile = jsonFormat.generate "claude-code-settings.json" cfg.settings;
 in
@@ -146,8 +225,9 @@ in
 
       statusLine = {
         type = "command";
-        command = lib.getExe statusLine;
+        command = "${lib.getExe pkgs-unstable.claude-powerline} --config=${powerlineConfig}";
         padding = 0;
+        refreshInterval = 30;
       };
     };
 
