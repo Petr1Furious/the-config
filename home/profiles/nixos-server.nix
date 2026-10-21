@@ -3,12 +3,12 @@
 {
   imports = [
     ../default.nix
+    ../claude.nix
     ../linux.nix
   ];
 
   home.packages = with pkgs; [
     autorestic
-    pkgs-unstable.claude-code
     pkgs-unstable.codex
     gcc
     gh

@@ -11,9 +11,9 @@
     ./hardware-configuration.nix
     ./mounts.nix
     ../../modules/nixos/base.nix
+    ../../modules/nixos/claude-code.nix
     ../../modules/nixos/qemu
     ../../modules/nixos/openrgb
-    # ../../modules/nixos/ollama.nix
   ];
 
   boot.loader.systemd-boot.enable = true;

@@ -26,6 +26,7 @@ let
     "tailscale-authkey.age"
     "cloudflare-dns-token.age"
     "telegram-bot-token.age"
+    "claude-grafana-mcp-token.age"
   ];
 in
 builtins.listToAttrs (

@@ -1,8 +1,9 @@
-{ pkgs-unstable, ... }:
+{ ... }:
 
 {
   imports = [
     ../bme688-exporter.nix
+    ../claude.nix
     ../core.nix
     ../ld2410-stream.nix
     ../linux.nix
@@ -14,8 +15,6 @@
     gpu.enable = false;
   };
 
-  home.packages = [ pkgs-unstable.claude-code ];
-
   home.sessionVariablesExtra = ''
     export PATH="$PATH:/usr/sbin:/sbin"
   '';
@@ -24,6 +23,9 @@
     name = "Petr Tsopa";
     email = "petrtsopa03@gmail.com";
   };
+
+  claude.github.enable = false;
+  claude.playwright.enable = false;
 
   shell.autoAttachTmux = true;
 
