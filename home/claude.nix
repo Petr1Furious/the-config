@@ -37,16 +37,10 @@ let
       };
     }
     {
-      block = {
-        enabled = true;
-        showPace = true;
-      };
+      block.enabled = true;
     }
     {
-      weekly = {
-        enabled = true;
-        showPace = true;
-      };
+      weekly.enabled = true;
     }
     {
       session = {
