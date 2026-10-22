@@ -14,7 +14,7 @@
     ./relay.nix
     ../../modules/nixos/base.nix
     ../../modules/nixos/claude-code.nix
-    ../../modules/nixos/browser.nix
+    ../../modules/nixos/browser
     ../../modules/nixos/backup
     ../../modules/nixos/compositor
     ../../modules/nixos/postgres.nix
