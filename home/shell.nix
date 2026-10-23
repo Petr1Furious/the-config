@@ -16,7 +16,6 @@ in
     # All clients must share a version: newer ones write history records older
     # ones fail to decode. TODO: switch to pkgs-unstable once atuin builds there.
     package = inputs.nixpkgs-atuin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.atuin;
-    flags = [ "--disable-up-arrow" ];
     daemon.enable = true;
     settings = {
       enter_accept = false;
@@ -59,6 +58,8 @@ in
     history = {
       path = "${config.xdg.dataHome}/zsh/history";
       extended = true;
+      save = 0;
+      share = false;
     };
 
     plugins = [
@@ -79,7 +80,6 @@ in
         "compfix"
         "completion"
         "git"
-        "history"
         "key-bindings"
         "termsupport"
       ]
@@ -147,6 +147,10 @@ in
 
       (lib.mkAfter ''
           zstyle ':completion:*' rehash true
+
+        # Home Manager's strategy option doesn't accept "atuin", and atuin's
+        # init only prepends itself, leaving the plugin's default history fallback.
+        ZSH_AUTOSUGGEST_STRATEGY=(atuin)
 
         function take() {
           mkdir -p -- "$1" && cd -- "$1"
