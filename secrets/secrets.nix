@@ -26,6 +26,8 @@ let
     "cloudflare-dns-token.age"
     "telegram-bot-token.age"
     "claude-grafana-mcp-token.age"
+    "htpasswd.age"
+    "meowconnect-env.age"
   ];
 in
 builtins.listToAttrs (
