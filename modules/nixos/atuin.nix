@@ -1,13 +1,12 @@
 {
   config,
-  inputs,
-  pkgs,
+  pkgs-unstable,
   ...
 }:
 {
   services.atuin = {
     enable = true;
-    package = inputs.nixpkgs-atuin.legacyPackages.${pkgs.stdenv.hostPlatform.system}.atuin;
+    package = pkgs-unstable.atuin;
     host = "127.0.0.1";
     port = 8889;
     openRegistration = true;
