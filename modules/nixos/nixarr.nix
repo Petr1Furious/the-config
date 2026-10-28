@@ -2,6 +2,7 @@
   config,
   lib,
   inputs,
+  pkgs-unstable,
   secrets,
   ...
 }:
@@ -51,6 +52,12 @@ in
     prowlarr.enable = true;
     bazarr.enable = true;
     seerr.enable = true;
+    audiobookshelf.enable = true;
+    shelfmark = {
+      enable = true;
+      # The stable version rejects Hardcover's current hc_pat_ tokens as too short.
+      package = pkgs-unstable.shelfmark;
+    };
 
     # settings-sync only ships a canned Transmission block, so qBittorrent has
     # to go through the generic list. Categories must match the qBittorrent
@@ -187,6 +194,7 @@ in
     ];
     options.backup.exclude = [
       "/srv/media/.state/nixarr/jellyfin/cache"
+      "/srv/media/.state/nixarr/audiobookshelf/metadata/cache"
     ];
   };
 
@@ -198,6 +206,10 @@ in
     {
       host = "seerr.petr1furious.me";
       target = "http://127.0.0.1:${toString seerrPort}";
+    }
+    {
+      host = "audiobooks.petr1furious.me";
+      target = "http://127.0.0.1:${toString config.nixarr.audiobookshelf.port}";
     }
     {
       host = "radarr.petr1furious.me";
@@ -217,6 +229,11 @@ in
     {
       host = "bazarr.petr1furious.me";
       target = "http://127.0.0.1:${toString bazarrPort}";
+      tailscaleOnly = true;
+    }
+    {
+      host = "shelfmark.petr1furious.me";
+      target = "http://127.0.0.1:${toString config.nixarr.shelfmark.port}";
       tailscaleOnly = true;
     }
     {

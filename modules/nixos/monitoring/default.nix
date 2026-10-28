@@ -30,6 +30,14 @@ let
       url = "http://127.0.0.1:8096/health";
     }
     {
+      service = "audiobookshelf";
+      url = "http://127.0.0.1:${toString config.nixarr.audiobookshelf.port}/healthcheck";
+    }
+    {
+      service = "shelfmark";
+      url = "http://127.0.0.1:${toString config.nixarr.shelfmark.port}/api/health";
+    }
+    {
       service = "seerr";
       url = "http://127.0.0.1:5055/api/v1/status";
     }
