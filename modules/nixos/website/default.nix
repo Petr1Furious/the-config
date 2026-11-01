@@ -24,7 +24,7 @@ let
   # Curated gate set kept small: the backend issues short-lived per-connect
   # credentials, so the config is regenerated on demand and each pull dials only
   # these gates, keeping upstream connect volume close to app-like usage.
-  meowconnectGates = "Best server,Netherlands,Finland,Sweden,Germany,Poland,Kazakhstan";
+  meowconnectGates = "Best server,Netherlands,Finland,Sweden,Germany,Poland,Russia";
 
   allExceptRu = {
     routing = "all-except-ru";
