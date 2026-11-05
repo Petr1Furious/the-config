@@ -16,6 +16,7 @@
     casks = [
       "google-chrome"
       "visual-studio-code"
+      "macshot"
       "notunes"
       "raycast"
       "iina"
