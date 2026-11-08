@@ -16,7 +16,10 @@
 
   home.packages = with pkgs; [
     autorestic
-    mitmproxy
+    # TODO: remove once upstream fixes it
+    (mitmproxy.overridePythonAttrs (old: {
+      disabledTests = (old.disabledTests or [ ]) ++ [ "test_emudhra" ];
+    }))
     mpv
     rclone
     restic
