@@ -16,7 +16,6 @@
 
   home.packages = with pkgs; [
     autorestic
-    pkgs-unstable.codex
     mitmproxy
     mpv
     rclone

@@ -9,7 +9,6 @@
 
   home.packages = with pkgs; [
     autorestic
-    pkgs-unstable.codex
     gcc
     gh
     pciutils
