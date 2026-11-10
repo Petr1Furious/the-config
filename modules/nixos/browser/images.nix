@@ -74,6 +74,9 @@ let
               "--output-dir"
               "/work/output"
             ];
+            # playwright-mcp's browser_evaluate has no timeout, so a stalled
+            # in-page fetch otherwise blocks for Claude Code's 30-minute default.
+            timeout = 120000;
           };
         }
       )

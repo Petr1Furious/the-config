@@ -25,6 +25,10 @@ logins outlive your session.
   to defeat the check, and don't silently give up on the task.
 - The browser's traffic leaves through a tailnet exit node on the user's home
   connection, not the server's datacenter IP. Sites geolocate accordingly.
+- Requests through the exit node sometimes stall forever. Give every `fetch`
+  inside `browser_evaluate` a `signal: AbortSignal.timeout(20000)`.
+- Make one playwright call at a time. Wait for a navigation to return before
+  evaluating on that page.
 - Snapshots, screenshots and console logs go to `/work/output`. Put page dumps
   or notes you save yourself there too. What is already there is from earlier
   sessions, not documentation: ignore it, and don't delete it unless asked.
