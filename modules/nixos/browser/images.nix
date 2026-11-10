@@ -58,9 +58,8 @@ let
   '';
 
   claudeConfig = pkgs.runCommand "claude-config" { } ''
-    mkdir -p $out/etc/claude/skills/browser $out/etc/claude-code
-    cp ${../../../home/claude/CLAUDE.md} $out/etc/claude/CLAUDE.md
-    cp ${./skill.md} $out/etc/claude/skills/browser/SKILL.md
+    mkdir -p $out/etc/claude $out/etc/claude-code
+    cp ${./CLAUDE.md} $out/etc/claude/CLAUDE.md
     cp ${
       pkgs.writeText "managed-mcp.json" (
         builtins.toJSON {
@@ -84,9 +83,8 @@ let
   '';
 
   agentStart = pkgs.writeShellScript "agent-start" ''
-    mkdir -p /root/.claude/skills
+    mkdir -p /root/.claude
     ln -sfn /etc/claude/CLAUDE.md /root/.claude/CLAUDE.md
-    ln -sfn /etc/claude/skills/browser /root/.claude/skills/browser
     exec sleep infinity
   '';
 in
