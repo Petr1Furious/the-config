@@ -75,9 +75,8 @@ let
     owner = meowconnectUser;
     group = meowconnectUser;
   };
-in
-{
-  services.nginx.virtualHosts."petr1furious.me" = {
+
+  virtualHost = {
     locations."/" = {
       return = "302 https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     };
@@ -95,6 +94,17 @@ in
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
       '';
     };
+  };
+
+  mkCaddyProxy = host: {
+    inherit host;
+    target = "http://127.0.0.1:${toString config.setup.nginxPort}";
+  };
+in
+{
+  services.nginx.virtualHosts = {
+    "petr1furious.me" = virtualHost;
+    "proxy.petr1furious.me" = virtualHost;
   };
 
   users.groups.${meowconnectUser} = { };
@@ -130,10 +140,8 @@ in
   # cache would be stale almost always.
 
   caddy.proxies = [
-    {
-      host = "petr1furious.me";
-      target = "http://127.0.0.1:${toString config.setup.nginxPort}";
-    }
+    (mkCaddyProxy "petr1furious.me")
+    (mkCaddyProxy "proxy.petr1furious.me")
   ];
 
   age.secrets.htpasswd = mkNginxSecret "htpasswd";
