@@ -23,10 +23,19 @@
     mpv
     rclone
     restic
+    texliveFull
     zstd
     (writeShellScriptBin "gtar" ''
       exec ${gnutar}/bin/tar "$@"
     '')
+  ];
+
+  programs.neovim.plugins = [
+    {
+      plugin = pkgs.vimPlugins.vimtex;
+      type = "lua";
+      config = ''vim.g.vimtex_view_method = "skim"'';
+    }
   ];
 
   age.secrets = {

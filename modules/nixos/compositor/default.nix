@@ -8,7 +8,6 @@
 {
   imports = [
     ./services/tgauth
-    # ./services/overleaf
     # ./services/pterodactyl
   ];
 
