@@ -16,6 +16,10 @@ in
         url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts";
         description = "Steven Black's unified adlist";
       }
+      {
+        url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt";
+        description = "HaGeZi Pro";
+      }
     ];
 
     settings.dns = {
