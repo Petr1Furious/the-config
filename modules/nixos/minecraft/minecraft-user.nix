@@ -77,7 +77,10 @@ in
   virtualisation.docker.rootless = {
     enable = true;
     extraPackages = [ pkgs.passt ];
-    daemon.settings.dns = [ "1.1.1.1" ];
+    daemon.settings.dns = [
+      "1.1.1.1"
+      "8.8.8.8"
+    ];
   };
   systemd.user.services.docker.environment = {
     DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";
