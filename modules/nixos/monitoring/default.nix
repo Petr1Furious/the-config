@@ -110,10 +110,6 @@ let
       service = "hseminecraft-map";
       url = "http://127.0.0.1:8100/";
     }
-    {
-      service = "hseminecraft-mmap";
-      url = "http://127.0.0.1:8101/";
-    }
   ];
 
   probeModule = t: "http_${t.service}";
