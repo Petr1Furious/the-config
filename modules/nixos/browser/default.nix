@@ -135,6 +135,14 @@ in
       until docker info >/dev/null 2>&1; do sleep 1; done
       ${images.browser} | docker load
       ${images.agent} | docker load
+      for dir in /srv/browser/*/; do
+        [ -f "$dir/.env" ] || continue
+        dc() { docker compose -f ${compose} --project-directory "$dir" -p "browser-$(basename "$dir")" "$@"; }
+        if [ -n "$(dc ps -q)" ]; then
+          dc up -d --quiet-pull
+        fi
+      done
+      docker image prune -af
     '';
     serviceConfig = {
       Type = "oneshot";

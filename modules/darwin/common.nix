@@ -5,14 +5,7 @@
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
-  nix = {
-    package = pkgs.lix;
-    gc = {
-      automatic = true;
-      options = "--delete-older-than 14d";
-    };
-    optimise.automatic = true;
-  };
+  nix.package = pkgs.lix;
 
   security.pam.services.sudo_local.touchIdAuth = true;
 
