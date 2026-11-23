@@ -20,6 +20,7 @@
     };
 
     casks = [
+      "unmojang/unmojang/fjordlauncher"
       "google-chrome"
       "visual-studio-code"
       "macshot"
