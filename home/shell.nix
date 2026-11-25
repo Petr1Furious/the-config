@@ -18,7 +18,7 @@ in
     package = pkgs-unstable.atuin;
     daemon.enable = true;
     settings = {
-      enter_accept = false;
+      enter_accept = true;
       search_mode = "fulltext";
       sync_address = "https://atuin.petr1furious.me";
       ai.enabled = true;
